@@ -165,6 +165,20 @@ static void _filter_tests(struct tests *ts, const char *filter)
 	}
 }
 
+static uint32_t _parse_uint32(const char *opt, const char *from, uint32_t *to)
+{
+	char *endptr;
+	uint32_t res = strtoul(from, &endptr, 10);
+
+	if (res == 0 || endptr != from) {
+		fprintf(stderr, "Invalid value for %s: %s\n", opt, from);
+		return 1;
+	}
+
+	*to = res;
+	return 0;
+}
+
 static void _print_opt(char *s, char *arg, char *desc)
 {
 	printf(INDENT "-%s, --%s\n", s, arg);
@@ -177,7 +191,9 @@ static void _print_usage(char **argv)
 	printf("\n");
 	_print_opt("f FILTER", "filter=FILTER", "only run tests prefixed with FILTER");
 	_print_opt("h", "help", "print this messave");
+	_print_opt("p#", "parallel=#", "number of tests to run in parallel; defaults to #CPU + 1");
 	_print_opt("s", "nofork", "run every test in a single process without isolation, buffering, or anything else");
+	_print_opt("t", "timeout", "set the global timeout for tests, in seconds");
 	_print_opt("v", "verbose", "print information about succeeding tests");
 
 	exit(2);
@@ -189,6 +205,8 @@ static void _set_opts(struct tests *ts, int argc, char **argv)
 		{ "filter", required_argument, NULL, 'f' },
 		{ "help", no_argument, NULL, 'h' },
 		{ "nofork", no_argument, &_nofork, 's' },
+		{ "parallel", required_argument, NULL, 'p' },
+		{ "timeout", no_argument, &_verbose, 't' },
 		{ "verbose", no_argument, &_verbose, 'v' },
 		{ NULL, 0, NULL, 0 },
 	};
@@ -197,7 +215,7 @@ static void _set_opts(struct tests *ts, int argc, char **argv)
 	_timeout = 5;
 
 	while (1) {
-		char c = getopt_long(argc, argv, "f:hv", lopts, NULL);
+		char c = getopt_long(argc, argv, "f:hp:t:v", lopts, NULL);
 		if (c == -1) {
 			break;
 		}
@@ -208,6 +226,18 @@ static void _set_opts(struct tests *ts, int argc, char **argv)
 
 			case 'f':
 				_filter_tests(ts, optarg);
+				break;
+
+			case 'p':
+				if (_parse_uint32("parallel", optarg, &_max_jobs)) {
+					_print_usage(argv);
+				}
+				break;
+
+			case 't':
+				if (_parse_uint32("timeout", optarg, &_timeout)) {
+					_print_usage(argv);
+				}
 				break;
 
 			case 'v':
@@ -224,8 +254,6 @@ static void _set_opts(struct tests *ts, int argc, char **argv)
 		}
 	}
 
-	// @todo change number of running tests
-	// @todo recording last-executed line of test
 	// @todo global setup/teardown in parent process
 	// @todo get_port()
 
