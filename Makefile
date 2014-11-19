@@ -1,9 +1,11 @@
 SHELL := /bin/bash
 
 TESTS = \
+	asserts \
 	exit_status \
 	filter \
 	nofork \
+	nofork_fail \
 	null_stdout \
 	range \
 	segfault \
@@ -45,6 +47,9 @@ valgrind: test
 clean:
 	rm -f $(TESTS:%=test/%)
 
+asserts: % : test/%
+	$(VG) ./$^ > /dev/null
+
 exit_status: % : test/%
 	$(VG) ./$^ | grep "exit code=1" -q
 
@@ -52,6 +57,9 @@ filter: % : test/%
 	$(VG) ./$^ -f run --filter=another > /dev/null
 
 nofork: % : test/%
+	$(VG) ./$^ --nofork
+
+nofork_fail: % : test/%
 	$(VG) ./$^ --nofork || [ $$? -eq 139 ]
 
 null_stdout: % : test/%
@@ -67,7 +75,7 @@ simple: % : test/%
 	$(VG) ./$^ > /dev/null
 
 timeout: % : test/%
-	$(VG) ./$^ | grep "timed out after" -q
+	$(VG) ./$^ | grep "timed out" -q
 
 updown: % : test/%
 	$(VG) ./$^ -v | grep "up-down" -q

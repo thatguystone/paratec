@@ -8,16 +8,8 @@
 
 #include "../paratec.h"
 
-PARATEC(nofork)
+PARATEC(nofork_fail)
 {
-	pt_seq("a", "a");
-	pt_sne("a", "b");
-
-	pt_meq("a", "a", 1);
-	pt_mne("a", "b", 1);
-}
-
-PARATEC(nofork_successful_failure, PTFAIL())
-{
-	pt_seq("a", "b");
+	int *i = 0;
+	*i = 1;
 }

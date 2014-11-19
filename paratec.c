@@ -12,6 +12,7 @@
 #include <getopt.h>
 #include <setjmp.h>
 #include <signal.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -22,9 +23,11 @@
 #include <unistd.h>
 #include "paratec.h"
 
+#define FAIL_EXIT_STATUS 255
 #define INDENT "    "
 #define STDPREFIX INDENT INDENT " | "
 #define LINE_SIZE 2048
+#define FAILMSG_SIZE 8192
 
 #define MIN(a, b) (a < b ? a : b)
 #define MAX(a, b) (a > b ? a : b)
@@ -39,6 +42,7 @@ struct job {
 	int64_t end_at;
 	int timed_out;
 	char last_line[LINE_SIZE];
+	char fail_msg[FAILMSG_SIZE];
 };
 
 struct buff {
@@ -55,6 +59,7 @@ struct test {
 	struct buff stdout;
 	struct buff stderr;
 	char last_line[LINE_SIZE];
+	char fail_msg[FAILMSG_SIZE];
 	struct paratec *p;
 	struct {
 		int run:1;
@@ -146,7 +151,6 @@ static void _setup_signals()
 	}
 }
 
-
 static void _filter_tests(struct tests *ts, const char *filter)
 {
 	uint32_t i;
@@ -220,7 +224,7 @@ static void _set_opts(struct tests *ts, int argc, char **argv)
 		}
 	}
 
-	// @todo single-process testing
+	// @todo change number of running tests
 	// @todo recording last-executed line of test
 	// @todo global setup/teardown in parent process
 	// @todo get_port()
@@ -375,6 +379,18 @@ static void _run_test(struct test *t, struct job *j)
 	}
 }
 
+static void _cleanup_job(struct job *j, struct test *t)
+{
+	close(j->stdout);
+	close(j->stderr);
+	j->pid = -1;
+	j->stdout = -1;
+	j->stderr = -1;
+
+	strncpy(t->last_line, j->last_line, sizeof(t->last_line));
+	strncpy(t->fail_msg, j->fail_msg, sizeof(t->fail_msg));
+}
+
 static void _run_fork_test(struct test *t, struct job *j)
 {
 	int err;
@@ -505,16 +521,10 @@ static void _run_fork_tests(struct tests *ts)
 			}
 
 			_flush_pipes(ts, jobsmm, N_ELEMENTS(jobs));
+			_cleanup_job(j, t);
 
-			close(j->stdout);
-			close(j->stderr);
-			j->pid = -1;
-			j->stdout = -1;
-			j->stderr = -1;
-
-			strncpy(t->last_line, j->last_line, sizeof(t->last_line));
-
-			if (t->flags.passed) {
+			if (t->flags.passed || (!t->flags.passed && t->p->expect_fail)) {
+				t->flags.passed = 1;
 				ts->passes++;
 				printf(".");
 			} else if (t->signal_num > 0) {
@@ -544,6 +554,9 @@ static void _run_nofork_tests(struct tests *ts)
 	uint32_t i;
 	struct job j;
 
+	memset(&j, 0, sizeof(j));
+	j.pid = j.stdout = j.stderr = -1;
+
 	for (i = 0; i < ts->c; i++) {
 		struct test *t = ts->all + i;
 		size_t len = MAX(strlen(t->name), 70);
@@ -560,15 +573,22 @@ static void _run_nofork_tests(struct tests *ts)
 			printf("Running: %s\n", t->name);
 			printf("%s\n\n", underline);
 
-			memset(&j, 0, sizeof(j));
 			_run_test(t, &j);
 
 			ts->passes++;
 			t->flags.passed = 1;
 		} else {
-			ts->failures++;
-			t->flags.passed = 0;
+			if (t->p->expect_fail) {
+				ts->passes++;
+				t->flags.passed = 1;
+			} else {
+				ts->failures++;
+				t->exit_status = FAIL_EXIT_STATUS;
+				t->flags.passed = 0;
+			}
 		}
+
+		_cleanup_job(&j, t);
 
 		printf("\n%s\n", underline);
 	}
@@ -592,31 +612,27 @@ static void _dump_line(const char *line, const size_t len)
 
 static void _clear_buff(int dump, const char *which, struct buff *b)
 {
-	if (dump) {
+	if (dump && !_nofork && b->len > 0) {
 		printf(INDENT INDENT "%s\n", which);
 
-		if (b->len == 0) {
-			printf(INDENT INDENT " | (nothing)\n");
-		} else {
-			int first = 1;
-			char *start = b->str;
-			size_t len = b->len;
+		int first = 1;
+		char *start = b->str;
+		size_t len = b->len;
 
-			while (1) {
-				char *nl = memmem(start, len, "\n", 1);
-				if (nl == NULL) {
-					if (first) {
-						_dump_line(start, len);
-					}
-					break;
+		while (1) {
+			char *nl = memmem(start, len, "\n", 1);
+			if (nl == NULL) {
+				if (first) {
+					_dump_line(start, len);
 				}
-
-				first = 0;
-				*nl = '\0';
-				_dump_line(start, nl - start);
-				len -= nl - start;
-				start = nl + 1;
+				break;
 			}
+
+			first = 0;
+			*nl = '\0';
+			_dump_line(start, nl - start);
+			len -= nl - start;
+			start = nl + 1;
 		}
 	}
 
@@ -685,20 +701,26 @@ int main(int argc, char **argv)
 				printf(INDENT " PASS : %s \n",
 					t->name);
 			}
-		} else if (t->exit_status != 0) {
-			printf(INDENT " FAIL : %s : exit code=%d\n",
+		} else if (t->exit_status == FAIL_EXIT_STATUS) {
+			printf(INDENT " FAIL : %s : %s : %s\n",
 				t->name,
+				t->last_line,
+				t->fail_msg);
+		} else if (t->exit_status != 0) {
+			printf(INDENT " FAIL : %s : after %s : exit code=%d\n",
+				t->name,
+				t->last_line,
 				t->exit_status);
 		} else if (t->flags.timed_out) {
-			printf(INDENT "ERROR : %s : timed out after %s\n",
+			printf(INDENT "ERROR : %s : after %s : timed out\n",
+				t->last_line,
+				t->name);
+		} else if (t->signal_num != 0) {
+			printf(INDENT "ERROR : %s : after %s : received signal(%d) `%s`\n",
 				t->name,
-				t->last_line);
-		} else {
-			printf(INDENT "ERROR : %s : received signal(%d) `%s` after %s\n",
-				t->name,
+				t->last_line,
 				t->signal_num,
-				strsignal(t->signal_num),
-				t->last_line);
+				strsignal(t->signal_num));
 		}
 
 		_clear_buff(dump, "stdout", &t->stdout);
@@ -709,4 +731,27 @@ int main(int argc, char **argv)
 	ts.all = NULL;
 
 	return ts.passes != ts.enabled;
+}
+
+void _pt_fail(
+	const char *format,
+	...)
+{
+	va_list args;
+	va_start(args, format);
+	vsnprintf(_tjob->fail_msg, sizeof(_tjob->fail_msg), format, args);
+	va_end(args);
+
+	if (_nofork) {
+		longjmp(_tfail, 1);
+	} else {
+		exit(FAIL_EXIT_STATUS);
+	}
+}
+
+void _pt_mark(
+	const char *file,
+	const size_t line)
+{
+	snprintf(_tjob->last_line, sizeof(_tjob->last_line), "%s:%zu", file, line);
 }
