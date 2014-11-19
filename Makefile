@@ -3,6 +3,7 @@ SHELL := /bin/bash
 TESTS = \
 	exit_status \
 	filter \
+	nofork \
 	null_stdout \
 	range \
 	segfault \
@@ -36,6 +37,7 @@ MEMCHECK = \
 		--track-origins=yes
 
 test: $(TESTS)
+	@echo "SUCCESS"
 
 valgrind: VG = $(MEMCHECK)
 valgrind: test
@@ -48,6 +50,9 @@ exit_status: % : test/%
 
 filter: % : test/%
 	$(VG) ./$^ -f run --filter=another > /dev/null
+
+nofork: % : test/%
+	$(VG) ./$^ --nofork || [ $$? -eq 139 ]
 
 null_stdout: % : test/%
 	$(VG) ./$^ -v | grep -P '\x00' -q

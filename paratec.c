@@ -10,6 +10,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <getopt.h>
+#include <setjmp.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -76,11 +77,13 @@ struct tests {
 };
 
 static uint32_t _max_jobs;
+static int _nofork;
 static uint32_t _timeout;
 static int _verbose;
 
 // Only for use in testing processes
 static struct job *_tjob;
+static jmp_buf _tfail;
 
 static int64_t _now()
 {
@@ -170,6 +173,7 @@ static void _print_usage(char **argv)
 	printf("\n");
 	_print_opt("f FILTER", "filter=FILTER", "only run tests prefixed with FILTER");
 	_print_opt("h", "help", "print this messave");
+	_print_opt("s", "nofork", "run every test in a single process without isolation, buffering, or anything else");
 	_print_opt("v", "verbose", "print information about succeeding tests");
 
 	exit(2);
@@ -180,6 +184,7 @@ static void _set_opts(struct tests *ts, int argc, char **argv)
 	struct option lopts[] = {
 		{ "filter", required_argument, NULL, 'f' },
 		{ "help", no_argument, NULL, 'h' },
+		{ "nofork", no_argument, &_nofork, 's' },
 		{ "verbose", no_argument, &_verbose, 'v' },
 		{ NULL, 0, NULL, 0 },
 	};
@@ -203,6 +208,10 @@ static void _set_opts(struct tests *ts, int argc, char **argv)
 
 			case 'v':
 				_verbose = 1;
+				break;
+
+			case 's':
+				_nofork = 1;
 				break;
 
 			case 'h':
@@ -352,6 +361,22 @@ static void _dup2(int std, int fd)
 
 static void _run_test(struct test *t, struct job *j)
 {
+	_tjob = j;
+	strncat(_tjob->last_line, "test start", sizeof(_tjob->last_line));
+
+	if (t->p->setup != NULL) {
+		t->p->setup();
+	}
+
+	t->p->fn(t->i);
+
+	if (t->p->teardown != NULL) {
+		t->p->teardown();
+	}
+}
+
+static void _run_fork_test(struct test *t, struct job *j)
+{
 	int err;
 	pid_t pid;
 	int pstdin[2];
@@ -383,18 +408,7 @@ static void _run_test(struct test *t, struct job *j)
 			exit(1);
 		}
 
-		_tjob = j;
-		strncat(_tjob->last_line, "test start", sizeof(_tjob->last_line));
-
-		if (t->p->setup != NULL) {
-			t->p->setup();
-		}
-
-		t->p->fn(t->i);
-
-		if (t->p->teardown != NULL) {
-			t->p->teardown();
-		}
+		_run_test(t, j);
 
 		exit(0);
 	} else {
@@ -407,23 +421,22 @@ static void _run_test(struct test *t, struct job *j)
 	}
 }
 
-static void _run_next_test(struct tests *ts, struct job *j)
+static void _run_next_fork_test(struct tests *ts, struct job *j)
 {
 	while (ts->next_test < ts->c) {
 		uint32_t i = ts->next_test++;
 		struct test *t = ts->all + i;
 
 		if (t->flags.run) {
-			_run_test(t, j);
+			_run_fork_test(t, j);
 			j->i = i;
 			break;
 		}
 	}
 }
 
-static void _run_tests(struct tests *ts)
+static void _run_fork_tests(struct tests *ts)
 {
-
 	pid_t pid;
 	uint32_t i;
 	int status;
@@ -451,7 +464,7 @@ static void _run_tests(struct tests *ts)
 
 	for (i = 0; i < N_ELEMENTS(jobs) && i < ts->c; i++) {
 		j = jobsmm + i;
-		_run_next_test(ts, j);
+		_run_next_fork_test(ts, j);
 	}
 
 	while (finished < ts->enabled) {
@@ -515,7 +528,7 @@ static void _run_tests(struct tests *ts)
 
 			fflush(stdout);
 
-			_run_next_test(ts, j);
+			_run_next_fork_test(ts, j);
 			finished++;
 		}
 
@@ -524,6 +537,50 @@ static void _run_tests(struct tests *ts)
 	}
 
 	printf("\n");
+}
+
+static void _run_nofork_tests(struct tests *ts)
+{
+	uint32_t i;
+	struct job j;
+
+	for (i = 0; i < ts->c; i++) {
+		struct test *t = ts->all + i;
+		size_t len = MAX(strlen(t->name), 70);
+		char underline[9 + len + 1];
+
+		if (!t->flags.run) {
+			continue;
+		}
+
+		memset(underline, '=', sizeof(underline));
+		underline[sizeof(underline) - 1] = '\0';
+
+		if (setjmp(_tfail) == 0) {
+			printf("Running: %s\n", t->name);
+			printf("%s\n\n", underline);
+
+			memset(&j, 0, sizeof(j));
+			_run_test(t, &j);
+
+			ts->passes++;
+			t->flags.passed = 1;
+		} else {
+			ts->failures++;
+			t->flags.passed = 0;
+		}
+
+		printf("\n%s\n", underline);
+	}
+}
+
+static void _run_tests(struct tests *ts)
+{
+	if (_nofork) {
+		_run_nofork_tests(ts);
+	} else {
+		_run_fork_tests(ts);
+	}
 }
 
 static void _dump_line(const char *line, const size_t len)
@@ -607,7 +664,7 @@ int main(int argc, char **argv)
 		ts.enabled == 0 ?
 			100 :
 			(int)((((double)ts.passes) / ts.enabled) * 100),
-		ts.c,
+		ts.enabled,
 		ts.errors,
 		ts.failures,
 		ts.c - ts.enabled);
