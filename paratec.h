@@ -25,7 +25,6 @@
 	static struct paratec* __paratec_ ## test_fn \
 		__attribute((__section__("paratec"))) \
 		__attribute((__used__)) = &(struct paratec){ \
-			.file = __FILE__, \
 			.name = #test_fn, \
 			.fn = __paratec_test_ ## test_fn, \
 			__VA_ARGS__ \
@@ -67,7 +66,6 @@
  * Used internally by paratec. Don't mess with any of this.
  */
 struct paratec {
-	char *file;
 	char *name;
 	int exit_status;
 	int signal_num;
