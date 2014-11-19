@@ -5,6 +5,11 @@ Paratec is a simple unit testing framework that stays out of your way while
 making your life easier. Tests are always run in isolation from each other and
 in parallel, so everything is always fast and safe.
 
+## Quick Start
+
+Drop `paratec.{c,h}` in your project, add them to your build, and you should be
+off running.
+
 ## Let's get testing
 
 It's really simple to get testing. Just write your test cases, link in `paratec.c`
@@ -110,3 +115,7 @@ The paratec binary comes equipped with the following options:
   `-s`        |  `--nofork`  |  `PTNOFORK`  |  Throw caution to the wind and don't isolate test cases. This is useful for running tests in `gdb`.
   `-t`        |  `--timeout` |  `PTTIMEOUT` |  Change the global timeout from 5 seconds to the given value.
   `-v`        |  `--verbose` |  `PTVERBOSE` |  Print information about tests that succeed.
+
+## Supported Platforms
+
+Tested on Debian/testing, OSX 10.10, and travis-ci's environment-du-jour.
