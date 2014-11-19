@@ -17,6 +17,9 @@ CFLAGS = \
 	-D_FORTIFY_SOURCE=2 \
 	-std=gnu99
 
+LDFLAGS = \
+	-lrt
+
 test: $(TESTS)
 
 valgrind: test
