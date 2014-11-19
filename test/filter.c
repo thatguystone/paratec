@@ -19,6 +19,16 @@ PARATEC(another)
 	printf("another\n");
 }
 
+PARATEC(two)
+{
+	printf("two\n");
+}
+
+PARATEC(others)
+{
+	printf("others\n");
+}
+
 PARATEC(fail)
 {
 	int *i = 0;

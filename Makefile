@@ -55,7 +55,7 @@ exit_status: % : test/%
 	$(VG) ./$^ | grep "exit code=1" -q
 
 filter: % : test/%
-	$(VG) ./$^ -f run --filter=another > /dev/null
+	$(VG) ./$^ -f run --filter=another -f two,others | grep "4 tests"
 
 nofork: % : test/%
 	$(VG) ./$^ --nofork

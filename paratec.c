@@ -156,16 +156,30 @@ static void _setup_signals()
 	}
 }
 
-static void _filter_tests(struct tests *ts, const char *filter)
+static void _filter_tests(struct tests *ts, const char *filter_)
 {
+	char *f;
+	char *filt;
 	uint32_t i;
+	char filter[strlen(filter_) + 1];
 
-	for (i = 0; i < ts->c; i++) {
-		struct test *t = ts->all + i;
-		if (strstr(t->name, filter) == t->name) {
-			t->flags.filtered_run = 1;
-		} else {
-			t->flags.run = 0;
+	strcpy(filter, filter_);
+	filt = filter;
+
+	while (1) {
+		f = strtok(filt, ", ");
+		filt = NULL;
+		if (f == NULL) {
+			break;
+		}
+
+		for (i = 0; i < ts->c; i++) {
+			struct test *t = ts->all + i;
+			if (strstr(t->name, f) == t->name) {
+				t->flags.filtered_run = 1;
+			} else {
+				t->flags.run = 0;
+			}
 		}
 	}
 }
@@ -194,7 +208,7 @@ static void _print_usage(char **argv)
 {
 	printf("Usage: %s [OPTION]...\n", argv[0]);
 	printf("\n");
-	_print_opt("f FILTER", "filter=FILTER", "only run tests prefixed with FILTER");
+	_print_opt("f FILTER", "filter=FILTER,...", "only run tests prefixed with FILTER, may be given multiple times");
 	_print_opt("h", "help", "print this messave");
 	_print_opt("j#CPU+1", "jobs=#CPU+1", "number of tests to run in parallel");
 	_print_opt("p" STR(PORT), "port=" STR(PORT), "port number to start handing out ports at");
@@ -202,6 +216,67 @@ static void _print_usage(char **argv)
 	_print_opt("t", "timeout", "set the global timeout for tests, in seconds");
 
 	exit(2);
+}
+
+static void _set_opt(char **argv, struct tests *ts, const char c)
+{
+	switch (c) {
+		case 0:
+			break;
+
+		case 'f':
+			_filter_tests(ts, optarg);
+			break;
+
+		case 'j':
+			if (_parse_uint32("jobs", optarg, &_max_jobs)) {
+				_print_usage(argv);
+			}
+			break;
+
+		case 'p':
+			if (_parse_uint32("port", optarg, &_port) ||
+				_port == 0 ||
+				_port > UINT16_MAX) {
+
+				_print_usage(argv);
+			}
+			break;
+
+		case 't':
+			if (_parse_uint32("timeout", optarg, &_timeout)) {
+				_print_usage(argv);
+			}
+			break;
+
+		case 'v':
+			_verbose = 1;
+			break;
+
+		case 's':
+			_nofork = 1;
+			break;
+
+		case 'h':
+		default:
+			_print_usage(argv);
+	}
+}
+
+static void _setenvopt(
+	char **argv,
+	struct tests *ts,
+	const char *name,
+	const char c)
+{
+	char *v = getenv(name);
+	if (v == NULL) {
+		return;
+	}
+
+	optarg = v;
+	_set_opt(argv, ts, c);
+	optarg = NULL;
 }
 
 static void _set_opts(struct tests *ts, int argc, char **argv)
@@ -221,53 +296,20 @@ static void _set_opts(struct tests *ts, int argc, char **argv)
 	_port = PORT;
 	_timeout = 5;
 
+	_setenvopt(argv, ts, "PTFILTER", 'f');
+	_setenvopt(argv, ts, "PTJOBS", 'j');
+	_setenvopt(argv, ts, "PTNOFORK", 's');
+	_setenvopt(argv, ts, "PTPORT", 'p');
+	_setenvopt(argv, ts, "PTTIMEOUT", 't');
+	_setenvopt(argv, ts, "PTVERBOSE", 'v');
+
 	while (1) {
 		char c = getopt_long(argc, argv, "f:hj:p:t:v", lopts, NULL);
 		if (c == -1) {
 			break;
 		}
 
-		switch (c) {
-			case 0:
-				break;
-
-			case 'f':
-				_filter_tests(ts, optarg);
-				break;
-
-			case 'j':
-				if (_parse_uint32("jobs", optarg, &_max_jobs)) {
-					_print_usage(argv);
-				}
-				break;
-
-			case 'p':
-				if (_parse_uint32("port", optarg, &_port) ||
-					_port == 0 ||
-					_port > UINT16_MAX) {
-
-					_print_usage(argv);
-				}
-				break;
-
-			case 't':
-				if (_parse_uint32("timeout", optarg, &_timeout)) {
-					_print_usage(argv);
-				}
-				break;
-
-			case 'v':
-				_verbose = 1;
-				break;
-
-			case 's':
-				_nofork = 1;
-				break;
-
-			case 'h':
-			default:
-				_print_usage(argv);
-		}
+		_set_opt(argv, ts, c);
 	}
 }
 
