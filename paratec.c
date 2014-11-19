@@ -23,6 +23,10 @@
 #include <unistd.h>
 #include "paratec.h"
 
+#define XSTR(s) #s
+#define STR(s) XSTR(s)
+
+#define PORT 43120
 #define FAIL_EXIT_STATUS 255
 #define INDENT "    "
 #define STDPREFIX INDENT INDENT " | "
@@ -34,10 +38,10 @@
 #define N_ELEMENTS(arr) (sizeof(arr) / sizeof((arr)[0]))
 
 struct job {
+	uint32_t id;
 	pid_t pid;
 	int stdout;
 	int stderr;
-
 	uint32_t i; // Index of the test in tests.all
 	int64_t end_at;
 	int timed_out;
@@ -83,6 +87,7 @@ struct tests {
 
 static uint32_t _max_jobs;
 static int _nofork;
+static uint32_t _port;
 static uint32_t _timeout;
 static int _verbose;
 
@@ -191,10 +196,10 @@ static void _print_usage(char **argv)
 	printf("\n");
 	_print_opt("f FILTER", "filter=FILTER", "only run tests prefixed with FILTER");
 	_print_opt("h", "help", "print this messave");
-	_print_opt("p#", "parallel=#", "number of tests to run in parallel; defaults to #CPU + 1");
+	_print_opt("j#CPU+1", "jobs=#CPU+1", "number of tests to run in parallel");
+	_print_opt("p" STR(PORT), "port=" STR(PORT), "port number to start handing out ports at");
 	_print_opt("s", "nofork", "run every test in a single process without isolation, buffering, or anything else");
 	_print_opt("t", "timeout", "set the global timeout for tests, in seconds");
-	_print_opt("v", "verbose", "print information about succeeding tests");
 
 	exit(2);
 }
@@ -205,17 +210,19 @@ static void _set_opts(struct tests *ts, int argc, char **argv)
 		{ "filter", required_argument, NULL, 'f' },
 		{ "help", no_argument, NULL, 'h' },
 		{ "nofork", no_argument, &_nofork, 's' },
-		{ "parallel", required_argument, NULL, 'p' },
+		{ "jobs", required_argument, NULL, 'j' },
+		{ "port", required_argument, NULL, 'p' },
 		{ "timeout", no_argument, &_verbose, 't' },
 		{ "verbose", no_argument, &_verbose, 'v' },
 		{ NULL, 0, NULL, 0 },
 	};
 
 	_max_jobs = _get_cpu_count() + 1;
+	_port = PORT;
 	_timeout = 5;
 
 	while (1) {
-		char c = getopt_long(argc, argv, "f:hp:t:v", lopts, NULL);
+		char c = getopt_long(argc, argv, "f:hj:p:t:v", lopts, NULL);
 		if (c == -1) {
 			break;
 		}
@@ -228,8 +235,17 @@ static void _set_opts(struct tests *ts, int argc, char **argv)
 				_filter_tests(ts, optarg);
 				break;
 
+			case 'j':
+				if (_parse_uint32("jobs", optarg, &_max_jobs)) {
+					_print_usage(argv);
+				}
+				break;
+
 			case 'p':
-				if (_parse_uint32("parallel", optarg, &_max_jobs)) {
+				if (_parse_uint32("port", optarg, &_port) ||
+					_port == 0 ||
+					_port > UINT16_MAX) {
+
 					_print_usage(argv);
 				}
 				break;
@@ -253,11 +269,6 @@ static void _set_opts(struct tests *ts, int argc, char **argv)
 				_print_usage(argv);
 		}
 	}
-
-	// @todo global setup/teardown in parent process
-	// @todo get_port()
-
-	(void)argv;
 }
 
 static void _add_test(struct tests *ts, struct paratec *p)
@@ -503,7 +514,10 @@ static void _run_fork_tests(struct tests *ts)
 	}
 
 	for (i = 0; i < N_ELEMENTS(jobs); i++) {
-		jobsmm[i].pid = -1;
+		j = jobsmm + i;
+
+		j->id = i;
+		j->pid = -1;
 	}
 
 	for (i = 0; i < N_ELEMENTS(jobs) && i < ts->c; i++) {
@@ -759,6 +773,11 @@ int main(int argc, char **argv)
 	ts.all = NULL;
 
 	return ts.passes != ts.enabled;
+}
+
+uint16_t pt_get_port(uint8_t i)
+{
+	return _port + _tjob->id + (i * _max_jobs);
 }
 
 void _pt_fail(

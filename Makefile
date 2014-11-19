@@ -7,6 +7,7 @@ TESTS = \
 	nofork \
 	nofork_fail \
 	null_stdout \
+	port \
 	range \
 	segfault \
 	simple \
@@ -64,6 +65,9 @@ nofork_fail: % : test/%
 
 null_stdout: % : test/%
 	$(VG) ./$^ -v | grep -P '\x00' -q
+
+port: % : test/%
+	$(VG) ./$^ > /dev/null
 
 range: % : test/%
 	$(VG) ./$^ > /dev/null

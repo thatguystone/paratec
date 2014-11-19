@@ -177,6 +177,16 @@
 #define pt_ule_msg(a, b, msg, ...) pt_uint_msg(a, <=, b, msg, ##__VA_ARGS__)
 
 /**
+ * When testing network services, it's useful to have a unique port for the
+ * service to listen on. This function will give you that port. This function
+ * returns the same port number, per test, no matter how many times it's called,
+ * for the given port index.
+ *
+ * When you need multiple ports, increment `i` and call again for another port.
+ */
+uint16_t pt_get_port(uint8_t i);
+
+/**
  * Used internally by paratec. Don't mess with any of this.
  */
 struct paratec {
@@ -191,10 +201,6 @@ struct paratec {
 	void (*setup)();
 	void (*teardown)();
 };
-
-/**
- * Use the macros above
- */
 
 __attribute__((format(printf, 1, 2)))
 void _pt_fail(
