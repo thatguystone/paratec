@@ -6,12 +6,10 @@
  * http://opensource.org/licenses/MIT
  */
 
-#include <unistd.h>
+#include <stdio.h>
 #include "../paratec.h"
 
-PARATEC(timeout, PTTIME(.01))
+PARATEC(range, PTI(-3, 3))
 {
-	while (1) {
-		usleep(1000 * 1000 * 1000);
-	}
+	fprintf(stderr, "%ld:", _i);
 }

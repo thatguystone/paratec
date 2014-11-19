@@ -12,10 +12,13 @@
 #include <string.h>
 #include <sys/time.h>
 #include <sys/wait.h>
+#include <sys/mman.h>
 #include <signal.h>
 #include <time.h>
 #include <unistd.h>
 #include "paratec.h"
+
+#define LINE_SIZE 2048
 
 #define MIN(a, b) (a < b ? a : b)
 #define MAX(a, b) (a > b ? a : b)
@@ -26,13 +29,17 @@ struct job {
 	pid_t pid;
 	int64_t end_at;
 	int timed_out;
+	char last_line[LINE_SIZE];
 };
 
 struct test {
+	char name[LINE_SIZE];
 	int passed;
 	int timed_out;
 	int exit_status;
 	int signal_num;
+	int64_t i;
+	char last_line[LINE_SIZE];
 	struct paratec *p;
 };
 
@@ -49,6 +56,9 @@ struct tests {
 static uint32_t _max_jobs;
 static uint32_t _timeout;
 static uint32_t _verbose;
+
+// Only for use in testing processes
+static struct job *_tjob;
 
 static int64_t _now()
 {
@@ -113,29 +123,56 @@ static void _setup_signals()
 
 static void _set_opts(int argc, char **argv)
 {
-	_max_jobs = _get_cpu_count();
+	_max_jobs = _get_cpu_count() + 1;
 	_timeout = 5;
 
 	if (argc == 1) {
 		return;
 	}
 
+	// @todo test filtering
+	// @todo single-process testing
+	// @todo recording last-executed line of test
+	// @todo global setup/teardown in parent process
+	// @todo get_port()
+
 	(void)argv;
 }
 
 static void _add_test(struct tests *ts, struct paratec *p)
 {
+	int64_t i;
+	char index[34];
+	int has_range = 0;
+
 	struct test t = {
 		.passed = 0,
 		.p = p,
 	};
 
-	if (ts->c == ts->allocated) {
-		ts->allocated = MAX(ts->allocated, 1) * 2;
-		ts->all = realloc(ts->all, sizeof(*ts->all) * ts->allocated);
+	if (p->range_low == 0 && p->range_high == 0) {
+		p->range_high = 1;
+	} else {
+		has_range = 1;
 	}
 
-	ts->all[ts->c++] = t;
+	for (i = p->range_low; i < p->range_high; i++) {
+		if (ts->c == ts->allocated) {
+			ts->allocated = MAX(ts->allocated, 1) * 2;
+			ts->all = realloc(ts->all, sizeof(*ts->all) * ts->allocated);
+		}
+
+		if (has_range) {
+			snprintf(index, sizeof(index), ":%ld", i);
+		} else {
+			index[0] = '\0';
+		}
+
+		t.i = i;
+		snprintf(t.name, sizeof(t.name), "%s:%s%s", p->file, p->name, index);
+
+		ts->all[ts->c++] = t;
+	}
 }
 
 static void _check_timeouts(struct job *jobs, uint32_t jobsc)
@@ -160,10 +197,11 @@ static void _check_timeouts(struct job *jobs, uint32_t jobsc)
 static void _run_test(struct test *t, struct job *j)
 {
 	int err;
-	pid_t pid = fork();
+	pid_t pid;
 
 	memset(j, 0, sizeof(*j));
 
+	pid = fork();
 	if (pid == -1) {
 		fprintf(stderr, "failed to fork for test %s: %s\n",
 			t->p->name,
@@ -178,11 +216,14 @@ static void _run_test(struct test *t, struct job *j)
 			exit(1);
 		}
 
+		_tjob = j;
+		strncat(_tjob->last_line, "test start", sizeof(_tjob->last_line));
+
 		if (t->p->setup != NULL) {
 			t->p->setup();
 		}
 
-		t->p->fn(0);
+		t->p->fn(t->i);
 
 		if (t->p->teardown != NULL) {
 			t->p->teardown();
@@ -197,10 +238,12 @@ static void _run_test(struct test *t, struct job *j)
 
 static void _run_tests(struct tests *ts)
 {
+
 	pid_t pid;
 	uint32_t i;
 	int status;
 	struct job *j;
+	struct job *jobsmm;
 	struct job jobs[_max_jobs];
 	uint32_t finished = 0;
 	uint32_t curr_test = 0;
@@ -209,12 +252,21 @@ static void _run_tests(struct tests *ts)
 		return;
 	}
 
+	jobsmm = mmap(
+		jobs, sizeof(jobs),
+		PROT_READ | PROT_WRITE,
+		MAP_ANON | MAP_SHARED, -1, 0);
+	if (jobsmm == MAP_FAILED) {
+		perror("could not map shared testing memory");
+		exit(1);
+	}
+
 	for (i = 0; i < N_ELEMENTS(jobs); i++) {
-		jobs[i].pid = -1;
+		jobsmm[i].pid = -1;
 	}
 
 	for (i = 0; i < N_ELEMENTS(jobs) && i < ts->c; i++) {
-		j = jobs + i;
+		j = jobsmm + i;
 
 		_run_test(ts->all + i, j);
 		j->i = i;
@@ -234,9 +286,9 @@ static void _run_tests(struct tests *ts)
 
 		if (pid > 0) {
 			for (i = 0; i < N_ELEMENTS(jobs); i++) {
-				j = jobs + i;
+				j = jobsmm + i;
 				if (j->pid == pid) {
-					t = ts->all + jobs[i].i;
+					t = ts->all + jobsmm[i].i;
 					j->pid = -1;
 					break;
 				}
@@ -258,6 +310,8 @@ static void _run_tests(struct tests *ts)
 			} else {
 				continue;
 			}
+
+			strncpy(t->last_line, j->last_line, sizeof(t->last_line));
 
 			if (t->passed) {
 				ts->passes++;
@@ -282,7 +336,7 @@ static void _run_tests(struct tests *ts)
 			finished++;
 		}
 
-		_check_timeouts(jobs, N_ELEMENTS(jobs));
+		_check_timeouts(jobsmm, N_ELEMENTS(jobs));
 	}
 
 	printf("\n");
@@ -326,25 +380,23 @@ int main(int argc, char **argv)
 
 		if (t->passed) {
 			if (_verbose) {
-				printf("\t PASS : %s:%s \n",
-					t->p->file,
-					t->p->name);
+				printf("\t PASS : %s \n",
+					t->name);
 			}
 		} else if (t->exit_status != 0) {
-			printf("\t FAIL : %s:%s : exit code=%d\n",
-				t->p->file,
-				t->p->name,
+			printf("\t FAIL : %s : exit code=%d\n",
+				t->name,
 				t->exit_status);
 		} else if (t->timed_out) {
-			printf("\tERROR : %s:%s : timed out\n",
-				t->p->file,
-				t->p->name);
+			printf("\tERROR : %s : timed out after %s\n",
+				t->name,
+				t->last_line);
 		} else {
-			printf("\tERROR : %s:%s : signal %d, %s\n",
-				t->p->file,
-				t->p->name,
+			printf("\tERROR : %s : received signal(%d) `%s` after %s\n",
+				t->name,
 				t->signal_num,
-				strsignal(t->signal_num));
+				strsignal(t->signal_num),
+				t->last_line);
 		}
 	}
 

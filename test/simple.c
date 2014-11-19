@@ -10,7 +10,7 @@
 #include <unistd.h>
 #include "../paratec.h"
 
-PARATEC(a)
+PARATEC(basic)
 {
 
 }
@@ -26,7 +26,7 @@ PARATEC(signal, PTSIG(SIGSEGV))
 	*i = 1;
 }
 
-PARATEC(sleep, PTSIG(SIGKILL), PTTO(.01))
+PARATEC(sleep, PTSIG(SIGKILL), PTTIME(.01))
 {
 	while (1) {
 		usleep(1000 * 1000 * 1000);

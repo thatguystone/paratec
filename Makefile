@@ -1,8 +1,12 @@
+SHELL := /bin/bash
+
 TESTS = \
 	exit_status \
+	range \
 	segfault \
 	simple \
-	timeout
+	timeout \
+	updown
 
 CFLAGS = \
 	-g \
@@ -35,17 +39,23 @@ valgrind: test
 clean:
 	rm -f $(TESTS:%=test/%)
 
-simple: test/simple
+exit_status: % : test/%
+	./$^ | grep "exit code=1" -q
+
+range: % : test/%
+	./$^
+
+segfault: % : test/%
+	./$^ | grep "Segmentation fault" | grep after -q
+
+simple: % : test/%
 	./$^ > /dev/null
 
-timeout: test/timeout
-	./$^ | grep "timed out" -q
+timeout: % : test/%
+	./$^ | grep "timed out after" -q
 
-segfault: test/segfault
-	./$^ | grep "Segmentation fault" -q
-
-exit_status: test/exit_status
-	./$^ | grep "exit code=1" -q
+updown: % : test/%
+	./$^ | grep "up-down" -q
 
 test/%: test/%.c paratec.c paratec.h
 	$(CC) $(CFLAGS) test/$*.c paratec.c -o test/$* $(LDFLAGS)

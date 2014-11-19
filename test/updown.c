@@ -6,12 +6,20 @@
  * http://opensource.org/licenses/MIT
  */
 
-#include <unistd.h>
+#include <stdio.h>
 #include "../paratec.h"
 
-PARATEC(timeout, PTTIME(.01))
+static void _up()
 {
-	while (1) {
-		usleep(1000 * 1000 * 1000);
-	}
+	printf("up-");
+}
+
+static void _down()
+{
+	printf("down\n");
+}
+
+PARATEC(basic, PTUP(_up), PTDOWN(_down))
+{
+
 }
