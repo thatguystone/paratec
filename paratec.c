@@ -230,7 +230,7 @@ static uint32_t _parse_uint32(const char *opt, const char *from, uint32_t *to)
 	char *endptr;
 	uint32_t res = strtoul(from, &endptr, 10);
 
-	if (res == 0 || endptr != from) {
+	if (res == 0 || *endptr != '\0') {
 		fprintf(stderr, "Invalid value for %s: %s\n", opt, from);
 		return 1;
 	}
@@ -255,6 +255,7 @@ static void _print_usage(char **argv)
 	_print_opt("p" STR(PORT), "port=" STR(PORT), "port number to start handing out ports at");
 	_print_opt("s", "nofork", "run every test in a single process without isolation, buffering, or anything else");
 	_print_opt("t", "timeout", "set the global timeout for tests, in seconds");
+	_print_opt("v", "verbose", "print information about tests that succeed");
 
 	exit(2);
 }

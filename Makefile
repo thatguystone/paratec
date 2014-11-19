@@ -49,6 +49,7 @@ valgrind: test
 
 clean:
 	rm -f $(TESTS:%=test/%)
+	rm -rf $(TESTS:%=test/%.dSYM)
 
 asserts: % : test/%
 	$(VG) ./$^ > /dev/null

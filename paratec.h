@@ -109,42 +109,43 @@
 		pt_fail(msg, ##__VA_ARGS__); }
 
 /**
+ * String assertions with custom messages
+ */
+#define pt_str_msg(a, op, b, msg, ...) { \
+	const char* __pt_a = (a); \
+	const char* __pt_b = (b); \
+	pt_msg(0 op strcmp(__pt_a, __pt_b), msg, ##__VA_ARGS__); }
+#define pt_seq_msg(a, b, msg, ...) pt_str(a, ==, b, msg, ##__VA_ARGS__)
+#define pt_sne_msg(a, b, msg, ...) pt_str(a, !=, b, msg, ##__VA_ARGS__)
+
+/**
  * String assertions
  */
 #define pt_str(a, op, b) { \
-	const char* __pt_a = (a); \
-	const char* __pt_b = (b); \
-	pt_msg(0 op strcmp(__pt_a, __pt_b), \
+	pt_str_msg(a, op, b, \
 		"Expected `%s` %s `%s`", __pt_a, #op, __pt_b); }
 #define pt_seq(a, b) pt_str(a, ==, b)
 #define pt_sne(a, b) pt_str(a, !=, b)
 
 /**
- * Binary assertions
+ * Binary assertions with custom messages
  */
-#define pt_mem(a, op, b, len) { \
+#define pt_mem_msg(a, op, b, len, msg, ...) { \
 	const void* __pt_a = (a); \
 	const void* __pt_b = (b); \
 	const size_t n = (len); \
-	pt_msg(0 op memcmp(__pt_a, __pt_b, n), \
+	pt_msg(0 op memcmp(__pt_a, __pt_b, n), msg, ##__VA_ARGS__); }
+#define pt_meq_msg(a, b, len, msg, ...) pt_mem(a, ==, b, len, msg, ##__VA_ARGS__)
+#define pt_mne_msg(a, b, len, msg, ...) pt_mem(a, !=, b, len, msg, ##__VA_ARGS__)
+
+/**
+ * Binary assertions
+ */
+#define pt_mem(a, op, b, len) { \
+	pt_mem_msg(a, op, b, len, \
 		"Expected `%s` %s `%s`", #a, #op, #b); }
 #define pt_meq(a, b, len) pt_mem(a, ==, b, len)
 #define pt_mne(a, b, len) pt_mem(a, !=, b, len)
-
-/**
- * Integer assertions
- */
-#define pt_int(a, op, b) { \
-	const int64_t __pt_a = (a); \
-	const int64_t __pt_b = (b); \
-	pt_msg(__pt_a op __pt_b, \
-		"Expected %" PRId64 " %s %" PRId64, __pt_a, #op, __pt_b); }
-#define pt_eq(a, b) pt_int(a, ==, b)
-#define pt_ne(a, b) pt_int(a, !=, b)
-#define pt_gt(a, b) pt_int(a, >, b)
-#define pt_ge(a, b) pt_int(a, >=, b)
-#define pt_lt(a, b) pt_int(a, <, b)
-#define pt_le(a, b) pt_int(a, <=, b)
 
 /**
  * Integer assertions with custom messages
@@ -161,19 +162,17 @@
 #define pt_le_msg(a, b, msg, ...) pt_int_msg(a, <=, b, msg, ##__VA_ARGS__)
 
 /**
- * Unsigned integer assertions
+ * Integer assertions
  */
-#define pt_uint(a, op, b) { \
-	const uint64_t __pt_a = (a); \
-	const uint64_t __pt_b = (b); \
-	pt_msg(__pt_a op __pt_b, \
-		"Expected %" PRIu64 " %s %" PRIu64 , __pt_a, #op, __pt_b); }
-#define pt_ueq(a, b) pt_uint(a, ==, b)
-#define pt_une(a, b) pt_uint(a, !=, b)
-#define pt_ugt(a, b) pt_uint(a, >, b)
-#define pt_uge(a, b) pt_uint(a, >=, b)
-#define pt_ult(a, b) pt_uint(a, <, b)
-#define pt_ule(a, b) pt_uint(a, <=, b)
+#define pt_int(a, op, b) { \
+	pt_int_msg(a, op, b, \
+		"Expected %" PRId64 " %s %" PRId64, __pt_a, #op, __pt_b); }
+#define pt_eq(a, b) pt_int(a, ==, b)
+#define pt_ne(a, b) pt_int(a, !=, b)
+#define pt_gt(a, b) pt_int(a, >, b)
+#define pt_ge(a, b) pt_int(a, >=, b)
+#define pt_lt(a, b) pt_int(a, <, b)
+#define pt_le(a, b) pt_int(a, <=, b)
 
 /**
  * Unsigned integer assertions with custom messages
@@ -188,6 +187,19 @@
 #define pt_uge_msg(a, b, msg, ...) pt_uint_msg(a, >=, b, msg, ##__VA_ARGS__)
 #define pt_ult_msg(a, b, msg, ...) pt_uint_msg(a, <, b, msg, ##__VA_ARGS__)
 #define pt_ule_msg(a, b, msg, ...) pt_uint_msg(a, <=, b, msg, ##__VA_ARGS__)
+
+/**
+ * Unsigned integer assertions
+ */
+#define pt_uint(a, op, b) { \
+	pt_uint_msg(a, op, b, \
+		"Expected %" PRIu64 " %s %" PRIu64 , __pt_a, #op, __pt_b); }
+#define pt_ueq(a, b) pt_uint(a, ==, b)
+#define pt_une(a, b) pt_uint(a, !=, b)
+#define pt_ugt(a, b) pt_uint(a, >, b)
+#define pt_uge(a, b) pt_uint(a, >=, b)
+#define pt_ult(a, b) pt_uint(a, <, b)
+#define pt_ule(a, b) pt_uint(a, <=, b)
 
 /**
  * When testing network services, it's useful to have a unique port for the
