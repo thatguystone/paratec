@@ -11,5 +11,5 @@
 
 PARATEC(range, PTI(-3, 3))
 {
-	fprintf(stderr, "%ld:", _i);
+	fprintf(stderr, "%" PRIi64 ":", _i);
 }

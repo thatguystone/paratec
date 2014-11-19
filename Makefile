@@ -1,4 +1,4 @@
-SHELL := /bin/bash
+OS = $(shell uname -s)
 
 TESTS = \
 	asserts \
@@ -27,8 +27,10 @@ CFLAGS = \
 	-D_FORTIFY_SOURCE=2 \
 	-std=gnu99
 
-LDFLAGS = \
-	-lrt
+ifeq ($(OS),Linux)
+	LDFLAGS = \
+		-lrt
+endif
 
 MEMCHECK = \
 	valgrind \
@@ -64,7 +66,7 @@ nofork_fail: % : test/%
 	$(VG) ./$^ --nofork || [ $$? -eq 139 ]
 
 null_stdout: % : test/%
-	$(VG) ./$^ -v | grep -P '\x00' -q
+	$(VG) ./$^ -v | grep '\0' -q
 
 port: % : test/%
 	$(VG) ./$^ > /dev/null

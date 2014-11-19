@@ -22,10 +22,14 @@
 #include <time.h>
 #include <unistd.h>
 #include "paratec.h"
+#ifdef PT_DARWIN
+	#include <mach/mach_time.h>
+#endif
 
 #define XSTR(s) #s
 #define STR(s) XSTR(s)
 
+#define SLEEP_TIME (10 * 1000)
 #define PORT 43120
 #define FAIL_EXIT_STATUS 255
 #define INDENT "    "
@@ -97,16 +101,41 @@ static jmp_buf _tfail;
 
 static int64_t _now()
 {
-	int err;
-	struct timespec ts;
+	struct timespec t;
 
-	err = clock_gettime(CLOCK_MONOTONIC, &ts);
+#ifdef PT_LINUX
+
+	int err;
+
+	err = clock_gettime(CLOCK_MONOTONIC, &t);
 	if (err != 0) {
 		perror("failed to get time");
 		exit(1);
 	}
 
-	return (((int64_t)ts.tv_sec) * 1000000) + (ts.tv_nsec / 1000);
+
+#elif defined(PT_DARWIN)
+
+	// I'm just lazy: http://stackoverflow.com/a/5167506
+
+	static double orwl_timebase = 0.0;
+	static uint64_t orwl_timestart = 0;
+	double diff;
+
+	if (!orwl_timestart) {
+		mach_timebase_info_data_t tb = { 0, 0 };
+		mach_timebase_info(&tb);
+		orwl_timebase = tb.numer;
+		orwl_timebase /= tb.denom;
+		orwl_timestart = mach_absolute_time();
+	}
+	diff = (mach_absolute_time() - orwl_timestart) * orwl_timebase;
+	t.tv_sec = diff * (+1.0E-9);
+	t.tv_nsec = diff - (t.tv_sec * UINT64_C(1000000000));
+
+#endif
+
+	return (((int64_t)t.tv_sec) * 1000000) + (t.tv_nsec / 1000);
 }
 
 static uint32_t _get_cpu_count()
@@ -123,12 +152,14 @@ static uint32_t _get_cpu_count()
 
 static void _signal_wait()
 {
+#ifdef PT_LINUX
+
 	int err;
 	sigset_t mask;
 	siginfo_t info;
 	struct timespec timeout = {
 		.tv_sec = 0,
-		.tv_nsec = 10 * 1000,
+		.tv_nsec = SLEEP_TIME,
 	};
 
 	sigemptyset(&mask);
@@ -139,10 +170,18 @@ static void _signal_wait()
 		perror("sigtimedwait failed");
 		exit(1);
 	}
+
+#elif defined(PT_DARWIN)
+
+	usleep(SLEEP_TIME);
+
+#endif
 }
 
 static void _setup_signals()
 {
+#ifdef PT_LINUX
+
 	int err;
 	sigset_t mask;
 
@@ -154,6 +193,8 @@ static void _setup_signals()
 		perror("failed to change signal mask");
 		exit(1);
 	}
+
+#endif
 }
 
 static void _filter_tests(struct tests *ts, const char *filter_)
@@ -316,7 +357,7 @@ static void _set_opts(struct tests *ts, int argc, char **argv)
 static void _add_test(struct tests *ts, struct paratec *p)
 {
 	int64_t i;
-	char index[34];
+	char idx[34];
 	int has_range = 0;
 
 	struct test t = {
@@ -344,13 +385,13 @@ static void _add_test(struct tests *ts, struct paratec *p)
 		}
 
 		if (has_range) {
-			snprintf(index, sizeof(index), ":%ld", i);
+			snprintf(idx, sizeof(idx), ":%" PRId64, i);
 		} else {
-			index[0] = '\0';
+			idx[0] = '\0';
 		}
 
 		t.i = i;
-		snprintf(t.name, sizeof(t.name), "%s%s", p->name, index);
+		snprintf(t.name, sizeof(t.name), "%s%s", p->name, idx);
 
 		ts->all[ts->c++] = t;
 	}
@@ -733,13 +774,25 @@ int main(int argc, char **argv)
 
 	_setup_signals();
 
+#ifdef PT_LINUX
+
 	/**
-	 * There's something weird going on with GCC/LD: when not using a pointer,
-	 * anything larger than a few words causes the section to be misaligned, and
-	 * you can't access anything.
+	 * There's something weird going on with GCC/LD on Linux: when not using a
+	 * pointer, anything larger than a few words causes the section to be
+	 * misaligned, and you can't access anything.
 	 */
 	extern struct paratec *__start_paratec;
 	extern struct paratec *__stop_paratec;
+
+#elif defined(PT_DARWIN)
+
+	extern struct paratec *__start_paratec
+		__asm("section$start$__DATA$" PT_SECTION_NAME);
+	extern struct paratec *__stop_paratec
+		__asm("section$end$__DATA$" PT_SECTION_NAME);
+
+#endif
+
 	struct paratec **sp = &__start_paratec;
 
 	while (sp < &__stop_paratec) {
@@ -760,7 +813,7 @@ int main(int argc, char **argv)
 
 	_run_tests(&ts);
 
-	printf("%d%%: %u tests, %u errors, %u failures, %u skipped\n",
+	printf("%d%%: %" PRIu32 " tests, %" PRIu32 " errors, %" PRIu32 " failures, %" PRIu32 " skipped\n",
 		ts.enabled == 0 ?
 			100 :
 			(int)((((double)ts.passes) / ts.enabled) * 100),

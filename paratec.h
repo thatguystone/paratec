@@ -10,10 +10,23 @@
  */
 
 #pragma once
+#include <inttypes.h>
 #include <signal.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
+
+#define PT_SECTION_NAME "paratec"
+
+#ifdef __linux__
+	#define PT_LINUX
+	#define PT_SECTION PT_SECTION_NAME
+#elif (defined(__APPLE__) && defined(__MACH__))
+	#define PT_DARWIN
+	#define PT_SECTION "__DATA," PT_SECTION_NAME
+#else
+	#error Unsupported platform
+#endif
 
 /**
  * Run a unit test.
@@ -24,8 +37,8 @@
 #define PARATEC(test_fn, ...) \
 	static void __paratec_test_ ## test_fn(int64_t); \
 	static struct paratec* __paratec_ ## test_fn \
-		__attribute((__section__("paratec"))) \
-		__attribute((__used__)) = &(struct paratec){ \
+		__attribute((used,section(PT_SECTION))) \
+		= &(struct paratec){ \
 			.name = #test_fn, \
 			.fn = __paratec_test_ ## test_fn, \
 			__VA_ARGS__ \
@@ -125,7 +138,7 @@
 	const int64_t __pt_a = (a); \
 	const int64_t __pt_b = (b); \
 	pt_msg(__pt_a op __pt_b, \
-		"Expected %ld %s %ld", __pt_a, #op, __pt_b); }
+		"Expected %" PRId64 " %s %" PRId64, __pt_a, #op, __pt_b); }
 #define pt_eq(a, b) pt_int(a, ==, b)
 #define pt_ne(a, b) pt_int(a, !=, b)
 #define pt_gt(a, b) pt_int(a, >, b)
@@ -154,7 +167,7 @@
 	const uint64_t __pt_a = (a); \
 	const uint64_t __pt_b = (b); \
 	pt_msg(__pt_a op __pt_b, \
-		"Expected %ld %s %ld", __pt_a, #op, __pt_b); }
+		"Expected %" PRIu64 " %s %" PRIu64 , __pt_a, #op, __pt_b); }
 #define pt_ueq(a, b) pt_uint(a, ==, b)
 #define pt_une(a, b) pt_uint(a, !=, b)
 #define pt_ugt(a, b) pt_uint(a, >, b)
