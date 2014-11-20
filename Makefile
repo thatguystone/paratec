@@ -41,15 +41,66 @@ MEMCHECK = \
 		--num-callers=20 \
 		--track-origins=yes
 
+INSTALL = install -m 644
+PREFIX ?= /usr
+DEST = $(DESTDIR)/usr
+INSTALL_INC_DIR = $(DEST)/include
+INSTALL_LIB_DIR = $(DEST)/lib
+INSTALL_PKGCFG_DIR = $(INSTALL_LIB_DIR)/pkgconfig
+
+all: libparatec.so libparatec.a libparatec.pc
+
 test: $(TESTS)
 	@echo "SUCCESS"
 
 valgrind: VG = $(MEMCHECK)
 valgrind: test
 
+install: all
+	mkdir -p \
+		$(INSTALL_INC_DIR) \
+		$(INSTALL_LIB_DIR) \
+		$(INSTALL_PKGCFG_DIR)
+	$(INSTALL) paratec.h $(INSTALL_INC_DIR)
+	$(INSTALL) libparatec.so libparatec.a $(INSTALL_LIB_DIR)
+	$(INSTALL) libparatec.pc $(INSTALL_PKGCFG_DIR)
+
+uninstall:
+	rm -f $(INSTALL_INC_DIR)/paratec.h
+	rm -f $(INSTALL_LIB_DIR)/libparatec.{so,a}
+	rm -f $(INSTALL_PKGCFG_DIR)/libparatec.pc
+
 clean:
 	rm -f $(TESTS:%=test/%)
 	rm -rf $(TESTS:%=test/%.dSYM)
+	rm -f libparatec.so libparatec.a
+	rm -f libparatec.pc
+
+#
+# Rules for building
+#
+# ==============================================================================
+#
+
+libparatec.so: paratec.c paratec.h
+	$(CC) -O2 -shared -fPIC $(CFLAGS) $< -o $@
+
+libparatec.a: paratec.c paratec.h
+	$(CC) -c -O2 -fPIC $(CFLAGS) $< -o $@
+
+libparatec.pc: libparatec.pc.in
+	sed \
+		-e 's|{PREFIX}|$(PREFIX)|' \
+		$< > $@
+
+test/%: test/%.c paratec.c paratec.h
+	$(CC) $(CFLAGS) test/$*.c paratec.c -o test/$* $(LDFLAGS)
+
+#
+# Rules for test cases
+#
+# ==============================================================================
+#
 
 asserts: % : test/%
 	$(VG) ./$^ > /dev/null
@@ -86,6 +137,3 @@ timeout: % : test/%
 
 updown: % : test/%
 	$(VG) ./$^ -v | grep "up-down" -q
-
-test/%: test/%.c paratec.c paratec.h
-	$(CC) $(CFLAGS) test/$*.c paratec.c -o test/$* $(LDFLAGS)

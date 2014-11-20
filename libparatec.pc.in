@@ -1,0 +1,8 @@
+includedir={PREFIX}/include
+libdir={PREFIX}/lib
+
+Name: paratec
+Description: Parallel Testing in C: really fast and really simple unit testing
+Version: 0.1.0
+Cflags: -I${includedir}
+Libs: -L${libdir} -lparatec
