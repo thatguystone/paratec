@@ -103,6 +103,10 @@ static int _verbose;
 static struct job *_tjob;
 static jmp_buf _tfail;
 
+// Only for use in the parent process
+static struct job *_jobs;
+static uint32_t _jobsc;
+
 static int64_t _now()
 {
 	struct timespec t;
@@ -182,8 +186,27 @@ static void _signal_wait()
 #endif
 }
 
+static void _sigint_handler(int sig)
+{
+	uint32_t i;
+
+	for (i = 0; i < _jobsc; i++) {
+		struct job *j = _jobs + i;
+		if (j->pid != -1) {
+			killpg(j->pid, SIGKILL);
+		}
+	}
+
+	signal(SIGINT, SIG_DFL);
+	raise(sig);
+}
+
 static void _setup_signals()
 {
+	if (!_nofork) {
+		signal(SIGINT, _sigint_handler);
+	}
+
 #ifdef PT_LINUX
 
 	int err;
@@ -589,6 +612,7 @@ static void _run_fork_test(struct test *t, struct job *j)
 			_dup2(STDERR_FILENO, pstderr[1]);
 		}
 
+		signal(SIGINT, SIG_DFL);
 		err = setpgid(0, 0);
 		if (err < 0) {
 			perror("could not setpgid");
@@ -648,6 +672,8 @@ static void _run_fork_tests(struct tests *ts)
 		exit(1);
 	}
 
+	_jobs = jobsmm;
+	_jobsc = N_ELEMENTS(jobs);
 	for (i = 0; i < N_ELEMENTS(jobs); i++) {
 		j = jobsmm + i;
 
