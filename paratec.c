@@ -271,9 +271,9 @@ static void _print_usage(char **argv)
 	printf("\n");
 	_print_opt("f FILTER", "filter=FILTER,...", "only run tests prefixed with FILTER, may be given multiple times");
 	_print_opt("h", "help", "print this messave");
-	_print_opt("j#CPU+1", "jobs=#CPU+1", "number of tests to run in parallel");
+	_print_opt("j #CPU+1", "jobs=#CPU+1", "number of tests to run in parallel");
 	_print_opt("n", "nocapture", "don't capture stdout/stderr");
-	_print_opt("p" STR(PORT), "port=" STR(PORT), "port number to start handing out ports at");
+	_print_opt("p " STR(PORT), "port=" STR(PORT), "port number to start handing out ports at");
 	_print_opt("s", "nofork", "run every test in a single process without isolation, buffering, or anything else");
 	_print_opt("t", "timeout", "set the global timeout for tests, in seconds");
 	_print_opt("v", "verbose", "print information about tests that succeed");
