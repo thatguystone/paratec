@@ -413,7 +413,7 @@ static void _flush_pipe(int fd, struct buff *b)
 	ssize_t cap;
 
 	do {
-		if (b->alloc == b->len) {
+		if ((b->len + 1) >= b->alloc) {
 			b->alloc = sizeof(*b->str) * (MAX(b->alloc, 16) * 2);
 			b->str = realloc(b->str, b->alloc);
 			if (b->str == NULL) {

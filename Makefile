@@ -2,6 +2,7 @@ OS = $(shell uname -s)
 
 TESTS = \
 	asserts \
+	capture \
 	cleanup \
 	exit_status \
 	filter \
@@ -107,6 +108,9 @@ test/%: test/%.c paratec.c paratec.h
 
 asserts: % : test/%
 	$(VG) ./$^ > /dev/null
+
+capture: % : test/%
+	$(VG) ./$^ -v | [ `wc -l` -gt 1000 ]
 
 cleanup: % : test/%
 	$(VG) ./$^ | grep "cleanup_test, everybody clean up!" -q
