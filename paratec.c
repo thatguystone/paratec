@@ -878,7 +878,7 @@ int main(int argc, char **argv)
 					t->name);
 			}
 		} else if (t->exit_status == FAIL_EXIT_STATUS) {
-			printf(INDENT " FAIL : %s : %s : %s\n",
+			printf(INDENT " FAIL : %s : at %s : %s\n",
 				t->name,
 				t->last_line,
 				t->fail_msg);
@@ -889,8 +889,8 @@ int main(int argc, char **argv)
 				t->exit_status);
 		} else if (t->flags.timed_out) {
 			printf(INDENT "ERROR : %s : after %s : timed out\n",
-				t->last_line,
-				t->name);
+				t->name,
+				t->last_line);
 		} else if (t->signal_num != 0) {
 			printf(INDENT "ERROR : %s : after %s : received signal(%d) `%s`\n",
 				t->name,
