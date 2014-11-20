@@ -768,9 +768,11 @@ static void _dump_line(const char *line, const size_t len)
 	fwrite("\n", 1, 1, stdout);
 }
 
-static void _clear_buff(int dump, const char *which, struct buff *b)
+static int _clear_buff(int dump, const char *which, struct buff *b)
 {
-	if (dump && !_nofork && b->len > 0) {
+	dump = dump && !_nofork && b->len > 0;
+
+	if (dump) {
 		printf(INDENT INDENT "%s\n", which);
 
 		int first = 1;
@@ -796,6 +798,8 @@ static void _clear_buff(int dump, const char *which, struct buff *b)
 
 	free(b->str);
 	b->str = NULL;
+
+	return dump;
 }
 
 int main(int argc, char **argv)
@@ -857,6 +861,7 @@ int main(int argc, char **argv)
 
 	for (i = 0; i < ts.c; i++) {
 		int dump = 1;
+		int dumped = 0;
 		struct test *t = ts.all + i;
 
 		if (!t->flags.run) {
@@ -893,8 +898,12 @@ int main(int argc, char **argv)
 				strsignal(t->signal_num));
 		}
 
-		_clear_buff(dump, "stdout", &t->stdout);
-		_clear_buff(dump, "stderr", &t->stderr);
+		dumped = _clear_buff(dump, "stdout", &t->stdout);
+		dumped |= _clear_buff(dump, "stderr", &t->stderr);
+
+		if (dumped) {
+			printf("\n");
+		}
 	}
 
 	free(ts.all);
