@@ -31,9 +31,6 @@
 /**
  * Run a unit test.
  */
-
-// @todo Darwin: DATA,paratec is section name
-
 #define PARATEC(test_fn, ...) \
 	static void __paratec_test_ ## test_fn(int64_t); \
 	static struct paratec* __paratec_ ## test_fn \
