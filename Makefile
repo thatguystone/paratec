@@ -2,6 +2,7 @@ OS = $(shell uname -s)
 
 TESTS = \
 	asserts \
+	cleanup \
 	exit_status \
 	filter \
 	nofork \
@@ -16,6 +17,7 @@ TESTS = \
 
 CFLAGS = \
 	-g \
+	-O2 \
 	-Wall \
 	-Wextra \
 	-Wshadow \
@@ -104,6 +106,9 @@ test/%: test/%.c paratec.c paratec.h
 
 asserts: % : test/%
 	$(VG) ./$^ > /dev/null
+
+cleanup: % : test/%
+	$(VG) ./$^ | grep "cleanup_test, everybody clean up!" -q
 
 exit_status: % : test/%
 	$(VG) ./$^ | grep "exit code=1" -q

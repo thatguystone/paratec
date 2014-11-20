@@ -65,12 +65,20 @@
 /**
  * Add a setup function to the test that runs in the isolated environment.
  */
-#define PTUP(s) .setup = s
+#define PTUP(fn) .setup = fn
 
 /**
  * Add a teardown function to the test that runs in the isolated environment.
  */
-#define PTDOWN(t) .teardown = t
+#define PTDOWN(fn) .teardown = fn
+
+/**
+ * Cleanup after a test, outside of the testing environment. Even if a test
+ * fails, this function is run. No assertions may be run in this callback as
+ * it's only a cleanup function an not part of your test; running any assertions
+ * will result in undefined behavior.
+ */
+#define PTCLEANUP(fn) .cleanup = fn
 
 /**
  * Run a test multiple times, over the given range.
@@ -209,6 +217,11 @@
 uint16_t pt_get_port(uint8_t i);
 
 /**
+ * Get the name of the currently-running test
+ */
+const char* pt_get_name();
+
+/**
  * Used internally by paratec. Don't mess with any of this.
  */
 struct paratec {
@@ -222,6 +235,7 @@ struct paratec {
 	void (*fn)(int64_t);
 	void (*setup)();
 	void (*teardown)();
+	void (*cleanup)(const char*);
 };
 
 __attribute__((format(printf, 1, 2)))

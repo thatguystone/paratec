@@ -49,6 +49,7 @@ struct job {
 	uint32_t i; // Index of the test in tests.all
 	int64_t end_at;
 	int timed_out;
+	char test_name[LINE_SIZE];
 	char last_line[LINE_SIZE];
 	char fail_msg[FAILMSG_SIZE];
 };
@@ -489,7 +490,8 @@ static void _dup2(int std, int fd)
 static void _run_test(struct test *t, struct job *j)
 {
 	_tjob = j;
-	strncat(_tjob->last_line, "test start", sizeof(_tjob->last_line));
+	strncpy(_tjob->test_name, t->name, sizeof(_tjob->test_name));
+	strncpy(_tjob->last_line, "test start", sizeof(_tjob->last_line));
 
 	if (t->p->setup != NULL) {
 		t->p->setup();
@@ -512,6 +514,10 @@ static void _cleanup_job(struct job *j, struct test *t)
 
 	strncpy(t->last_line, j->last_line, sizeof(t->last_line));
 	strncpy(t->fail_msg, j->fail_msg, sizeof(t->fail_msg));
+
+	if (t->p->cleanup != NULL) {
+		t->p->cleanup(t->p->name);
+	}
 }
 
 static void _run_fork_test(struct test *t, struct job *j)
@@ -880,6 +886,11 @@ int main(int argc, char **argv)
 uint16_t pt_get_port(uint8_t i)
 {
 	return _port + _tjob->id + (i * _max_jobs);
+}
+
+const char* pt_get_name()
+{
+	return _tjob->test_name;
 }
 
 void _pt_fail(
