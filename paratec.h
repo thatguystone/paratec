@@ -153,6 +153,33 @@
 #define pt_mne(a, b, len) pt_mem(a, !=, b, len)
 
 /**
+ * Pointer assertions with custom messages
+ */
+#define pt_ptr_msg(a, op, b, msg, ...) { \
+	const void *__pt_a = (a); \
+	const void *__pt_b = (b); \
+	pt_msg(__pt_a op __pt_b, msg, ##__VA_ARGS__); }
+#define pt_peq_msg(a, b, msg, ...) pt_ptr_msg(a, ==, b, msg, ##__VA_ARGS__)
+#define pt_pne_msg(a, b, msg, ...) pt_ptr_msg(a, !=, b, msg, ##__VA_ARGS__)
+#define pt_pgt_msg(a, b, msg, ...) pt_ptr_msg(a, >, b, msg, ##__VA_ARGS__)
+#define pt_pge_msg(a, b, msg, ...) pt_ptr_msg(a, >=, b, msg, ##__VA_ARGS__)
+#define pt_plt_msg(a, b, msg, ...) pt_ptr_msg(a, <, b, msg, ##__VA_ARGS__)
+#define pt_ple_msg(a, b, msg, ...) pt_ptr_msg(a, <=, b, msg, ##__VA_ARGS__)
+
+/**
+ * Pointer assertions
+ */
+#define pt_ptr(a, op, b) { \
+	pt_ptr_msg(a, op, b, \
+		"Expected %p %s %p", __pt_a, #op, __pt_b); }
+#define pt_peq(a, b) pt_ptr(a, ==, b)
+#define pt_pne(a, b) pt_ptr(a, !=, b)
+#define pt_pgt(a, b) pt_ptr(a, >, b)
+#define pt_pge(a, b) pt_ptr(a, >=, b)
+#define pt_plt(a, b) pt_ptr(a, <, b)
+#define pt_ple(a, b) pt_ptr(a, <=, b)
+
+/**
  * Integer assertions with custom messages
  */
 #define pt_int_msg(a, op, b, msg, ...) { \

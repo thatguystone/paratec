@@ -20,6 +20,18 @@ PARATEC(memory)
 	pt_mne("defg", "hijk", 4);
 }
 
+PARATEC(ptr)
+{
+	pt_peq((void*)1, (void*)1);
+	pt_pne((void*)1, (void*)2);
+	pt_pgt((void*)2, (void*)1);
+	pt_pge((void*)2, (void*)2);
+	pt_pge((void*)3, (void*)2);
+	pt_plt((void*)1, (void*)2);
+	pt_ple((void*)2, (void*)2);
+	pt_ple((void*)2, (void*)3);
+}
+
 PARATEC(int)
 {
 	pt_eq(1, 1);

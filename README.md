@@ -85,6 +85,15 @@ Note: Aside from the basic assertions, each assertion has a `*_msg()` counterpar
 * `pt_meq(a, b, len)`: assert that two memory segments are equal
 * `pt_mne(a, b, len)`: assert that two memory segments aren't equal
 
+### Pointer Assertions
+
+* `pt_peq(a, b)`: assert a == b
+* `pt_pne(a, b)`: assert a != b
+* `pt_pgt(a, b)`: assert a > b
+* `pt_pge(a, b)`: assert a >= b
+* `pt_plt(a, b)`: assert a < b
+* `pt_ple(a, b)`: assert a <= b
+
 ### Signed Integer Assertions
 
 * `pt_eq(a, b)`: assert a == b
