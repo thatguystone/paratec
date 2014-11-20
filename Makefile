@@ -123,6 +123,8 @@ exit_status: % : test/%
 
 filter: % : test/%
 	$(VG) ./$^ -f run --filter=another -f two,others | grep "4 tests"
+	$(VG) ./$^ --filter=-fail -f -another -f another | grep "1 tests"
+	$(VG) ./$^ --filter=-fail,-another -f another,two | grep "2 tests"
 
 nocapture: % : test/%
 	$(VG) ./$^ -n | grep "nocapture!" -q

@@ -124,13 +124,30 @@ The paratec binary comes equipped with the following options:
 
  Short Option | Long Option    | Env Variable   | Description
  ------------ | -------------- | -------------- | -----------
-  `-f`        |  `--filter`    |  `PTFILTER`    |  Filter which tests are run: if a test has a given filter prefix, it will be run. This option may be given multiple times, and each value may be comma-separated to provide multiple filters. For example: with 4 tests, add, subtract, multiple, divide, and the filters "add", "subtract,divide", only multiply would not be run. On the command line, this would be `./paratec -f add --filter=subtract,divide`. As an environment variable, this would be `PTFILTER=add,subtract,divide`.
+  `-f`        |  `--filter`    |  `PTFILTER`    |  See [test filtering](#test-filtering). May be given multiple times.
   `-j`        |  `--jobs`      |  `PTJOBS`      |  Set the number of parallel tests to run. By default, this uses the number of CPUs on the machine + 1. Any positive integer > 0 is fine.
   `-n`        |  `--nocapture` |  `PTNOCAPTURE` |  Don't capture test output on stdout/stderr.
   `-p`        |  `--port`      |  `PTPORT`      |  Specify where pt_get_port() should start handing out ports.
   `-s`        |  `--nofork`    |  `PTNOFORK`    |  Throw caution to the wind and don't isolate test cases. This is useful for running tests in `gdb`.
   `-t`        |  `--timeout`   |  `PTTIMEOUT`   |  Change the global timeout from 5 seconds to the given value.
   `-v`        |  `--verbose`   |  `PTVERBOSE`   |  Print information about tests that succeed.
+
+### Test Filtering
+
+Test cases can be filtered for selective runs. Filters match on test name prefix; that is, a filter of `test` will match both `test_one`and `test_two`, whereas a filter of `test_two` will _only_ match `test_two`.
+
+Tests may also be negatively filtered, such that a filter of `-test_two` would, in the previous example, only match `test_one`.
+
+Filters may be comma-separated, given multiple times, or any combination thereof.
+
+The following are all valid filters:
+
+1. `-f test_`: only run tests starting with "test_"
+1. `--filter=test_`: same as above
+1. `--filter=test_ -f -test_two`: only run tests starting with "test_", except "test_two"
+1. `--filter=test_two -f -test_two`: run no tests (first filters for test_two, then removes test_two).
+1. `--filter=test_,-test_two`: only run tests starting with "test_", except "test_two"
+1. `PTFILTER=test_,-test_two`: only run tests starting with "test_", except "test_two"
 
 ## Supported Platforms
 

@@ -211,18 +211,34 @@ static void _filter_tests(struct tests *ts, const char *filter_)
 	filt = filter;
 
 	while (1) {
+		int neg;
+
 		f = strtok(filt, ", ");
 		filt = NULL;
 		if (f == NULL) {
 			break;
 		}
 
+		neg = *f == '-';
+		if (neg) {
+			f++;
+		}
+
 		for (i = 0; i < ts->c; i++) {
 			struct test *t = ts->all + i;
-			if (strstr(t->name, f) == t->name) {
-				t->flags.filtered_run = 1;
+			int matches = strstr(t->name, f) == t->name;
+
+			if (neg) {
+				if (matches) {
+					t->flags.filtered_run = 0;
+					t->flags.run = 0;
+				}
 			} else {
-				t->flags.run = 0;
+				if (matches) {
+					t->flags.filtered_run = 1;
+				} else {
+					t->flags.run = 0;
+				}
 			}
 		}
 	}
