@@ -706,16 +706,7 @@ static void _run_fork_tests(struct tests *ts)
 
 static void _run_nofork_test(struct tests *ts, struct test *t, struct job *j)
 {
-	size_t len = MAX(strlen(t->name), 70);
-	char underline[9 + len + 1];
-
-	memset(underline, '=', sizeof(underline));
-	underline[sizeof(underline) - 1] = '\0';
-
 	if (setjmp(_tfail) == 0) {
-		printf("Running: %s\n", t->name);
-		printf("%s\n\n", underline);
-
 		_run_test(t, j);
 
 		ts->passes++;
@@ -732,8 +723,6 @@ static void _run_nofork_test(struct tests *ts, struct test *t, struct job *j)
 	}
 
 	_cleanup_job(j, t);
-
-	printf("\n%s\n", underline);
 }
 
 static void _run_nofork_tests(struct tests *ts)
@@ -746,12 +735,21 @@ static void _run_nofork_tests(struct tests *ts)
 
 	for (i = 0; i < ts->c; i++) {
 		struct test *t = ts->all + i;
+		size_t len = MAX(strlen(t->name), 70);
+		char underline[9 + len + 1];
 
 		if (!t->flags.run) {
 			continue;
 		}
 
+		memset(underline, '=', sizeof(underline));
+		underline[sizeof(underline) - 1] = '\0';
+		printf("Running: %s\n", t->name);
+		printf("%s\n\n", underline);
+
 		_run_nofork_test(ts, t, &j);
+
+		printf("\n%s\n", underline);
 	}
 }
 

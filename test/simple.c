@@ -20,10 +20,9 @@ PARATEC(exit, PTEXIT(1))
 	exit(1);
 }
 
-PARATEC(signal, PTSIG(SIGSEGV))
+PARATEC(signal, PTSIG(SIGABRT))
 {
-	int *i = 0;
-	*i = 1;
+	abort();
 }
 
 PARATEC(sleep, PTSIG(SIGKILL), PTTIME(.01))

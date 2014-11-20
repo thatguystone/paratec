@@ -6,10 +6,10 @@
  * http://opensource.org/licenses/MIT
  */
 
+#include <stdlib.h>
 #include "../paratec.h"
 
 PARATEC(nofork_fail)
 {
-	int *i = 0;
-	*i = 1;
+	abort();
 }

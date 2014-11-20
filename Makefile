@@ -1,6 +1,7 @@
 OS = $(shell uname -s)
 
 TESTS = \
+	abort \
 	asserts \
 	capture \
 	cleanup \
@@ -12,7 +13,6 @@ TESTS = \
 	null_stdout \
 	port \
 	range \
-	segfault \
 	simple \
 	timeout \
 	updown
@@ -106,6 +106,9 @@ test/%: test/%.c paratec.c paratec.h
 # ==============================================================================
 #
 
+abort: % : test/%
+	$(VG) ./$^ | grep "Aborted" | grep after -q
+
 asserts: % : test/%
 	$(VG) ./$^ > /dev/null
 
@@ -128,7 +131,7 @@ nofork: % : test/%
 	$(VG) ./$^ --nofork
 
 nofork_fail: % : test/%
-	$(VG) ./$^ --nofork || [ $$? -eq 139 ]
+	$(VG) ./$^ --nofork || [ $$? -eq 134 ]
 
 null_stdout: % : test/%
 	$(VG) ./$^ -v | grep '\0' -q
@@ -138,9 +141,6 @@ port: % : test/%
 
 range: % : test/%
 	$(VG) ./$^ > /dev/null
-
-segfault: % : test/%
-	$(VG) ./$^ | grep "Segmentation fault" | grep after -q
 
 simple: % : test/%
 	$(VG) ./$^ > /dev/null

@@ -6,10 +6,10 @@
  * http://opensource.org/licenses/MIT
  */
 
+#include <stdlib.h>
 #include "../paratec.h"
 
-PARATEC(segfault)
+PARATEC(death)
 {
-	int *i = 0;
-	*i = 1;
+	abort();
 }
