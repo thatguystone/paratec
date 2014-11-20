@@ -46,6 +46,7 @@ struct job {
 	int stdout;
 	int stderr;
 	uint32_t i; // Index of the test in tests.all
+	int64_t start;
 	int64_t end_at;
 	int timed_out;
 	char test_name[LINE_SIZE];
@@ -63,6 +64,7 @@ struct test {
 	char name[LINE_SIZE];
 	int exit_status;
 	int signal_num;
+	double duration;
 	int64_t i; // For ranged tests, the i in the range
 	struct buff stdout;
 	struct buff stderr;
@@ -522,6 +524,7 @@ static void _cleanup_job(struct job *j, struct test *t)
 		close(j->stderr);
 	}
 
+	t->duration = (_now() - j->start) / ((double)(1000 * 1000));
 	strncpy(t->last_line, j->last_line, sizeof(t->last_line));
 	strncpy(t->fail_msg, j->fail_msg, sizeof(t->fail_msg));
 
@@ -529,6 +532,7 @@ static void _cleanup_job(struct job *j, struct test *t)
 	j->stdout = -1;
 	j->stderr = -1;
 	j->timed_out = 0;
+	j->start = INT64_MIN;
 	j->end_at = INT64_MIN;
 	*j->test_name = '\0';
 	*j->last_line = '\0';
@@ -585,7 +589,8 @@ static void _run_fork_test(struct test *t, struct job *j)
 		}
 
 		j->pid = pid;
-		j->end_at = _now() + ((t->p->timeout ?: _timeout) * 1000 * 1000);
+		j->start = _now();
+		j->end_at = j->start + ((t->p->timeout ?: _timeout) * 1000 * 1000);
 	}
 }
 
@@ -874,26 +879,31 @@ int main(int argc, char **argv)
 		} else if (t->flags.passed) {
 			dump = _verbose;
 			if (dump) {
-				printf(INDENT " PASS : %s \n",
-					t->name);
+				printf(INDENT " PASS : %s (%fs)\n",
+					t->name,
+					t->duration);
 			}
 		} else if (t->exit_status == FAIL_EXIT_STATUS) {
-			printf(INDENT " FAIL : %s : at %s : %s\n",
+			printf(INDENT " FAIL : %s (%fs) : at %s : %s\n",
 				t->name,
+				t->duration,
 				t->last_line,
 				t->fail_msg);
 		} else if (t->exit_status != 0) {
-			printf(INDENT " FAIL : %s : after %s : exit code=%d\n",
+			printf(INDENT " FAIL : %s (%fs) : after %s : exit code=%d\n",
 				t->name,
+				t->duration,
 				t->last_line,
 				t->exit_status);
 		} else if (t->flags.timed_out) {
-			printf(INDENT "ERROR : %s : after %s : timed out\n",
+			printf(INDENT "ERROR : %s (%fs) : after %s : timed out\n",
 				t->name,
+				t->duration,
 				t->last_line);
 		} else if (t->signal_num != 0) {
-			printf(INDENT "ERROR : %s : after %s : received signal(%d) `%s`\n",
+			printf(INDENT "ERROR : %s (%fs) : after %s : received signal(%d) `%s`\n",
 				t->name,
+				t->duration,
 				t->last_line,
 				t->signal_num,
 				strsignal(t->signal_num));
