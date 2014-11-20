@@ -354,7 +354,7 @@ static void _set_opts(struct tests *ts, int argc, char **argv)
 	_setenvopt(argv, ts, "PTVERBOSE", 'v');
 
 	while (1) {
-		char c = getopt_long(argc, argv, "f:hj:np:t:v", lopts, NULL);
+		char c = getopt_long(argc, argv, "f:hj:np:st:v", lopts, NULL);
 		if (c == -1) {
 			break;
 		}
