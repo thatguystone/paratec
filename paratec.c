@@ -37,6 +37,7 @@
 #define LINE_SIZE 2048
 #define FAILMSG_SIZE 8192
 
+#define RUNTIME(start) ((_now() - start) / ((double)(1000 * 1000)))
 #define MAX(a, b) (a > b ? a : b)
 #define N_ELEMENTS(arr) (sizeof(arr) / sizeof((arr)[0]))
 
@@ -540,7 +541,7 @@ static void _cleanup_job(struct job *j, struct test *t)
 		close(j->stderr);
 	}
 
-	t->duration = (_now() - j->start) / ((double)(1000 * 1000));
+	t->duration = RUNTIME(j->start);
 	strncpy(t->last_line, j->last_line, sizeof(t->last_line));
 	strncpy(t->fail_msg, j->fail_msg, sizeof(t->fail_msg));
 
@@ -826,6 +827,7 @@ static int _clear_buff(int dump, const char *which, struct buff *b)
 
 int main(int argc, char **argv)
 {
+	int64_t start;
 	uint32_t i;
 	struct tests ts;
 
@@ -870,16 +872,18 @@ int main(int argc, char **argv)
 		}
 	}
 
+	start = _now();
 	_run_tests(&ts);
 
-	printf("%d%%: %" PRIu32 " tests, %" PRIu32 " errors, %" PRIu32 " failures, %" PRIu32 " skipped\n",
+	printf("%d%%: %" PRIu32 " tests, %" PRIu32 " errors, %" PRIu32 " failures, %" PRIu32 " skipped. Ran in %fs\n",
 		ts.enabled == 0 ?
 			100 :
 			(int)((((double)ts.passes) / ts.enabled) * 100),
 		ts.enabled,
 		ts.errors,
 		ts.failures,
-		ts.c - ts.enabled);
+		ts.c - ts.enabled,
+		RUNTIME(start));
 
 	for (i = 0; i < ts.c; i++) {
 		int dump = 1;
