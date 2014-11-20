@@ -37,7 +37,6 @@
 #define LINE_SIZE 2048
 #define FAILMSG_SIZE 8192
 
-#define MIN(a, b) (a < b ? a : b)
 #define MAX(a, b) (a > b ? a : b)
 #define N_ELEMENTS(arr) (sizeof(arr) / sizeof((arr)[0]))
 
@@ -518,16 +517,22 @@ static void _run_test(struct test *t, struct job *j)
 
 static void _cleanup_job(struct job *j, struct test *t)
 {
-	j->pid = -1;
 	if (!_nocapture) {
 		close(j->stdout);
 		close(j->stderr);
-		j->stdout = -1;
-		j->stderr = -1;
 	}
 
 	strncpy(t->last_line, j->last_line, sizeof(t->last_line));
 	strncpy(t->fail_msg, j->fail_msg, sizeof(t->fail_msg));
+
+	j->pid = -1;
+	j->stdout = -1;
+	j->stderr = -1;
+	j->timed_out = 0;
+	j->end_at = INT64_MIN;
+	*j->test_name = '\0';
+	*j->last_line = '\0';
+	*j->fail_msg = '\0';
 
 	if (t->p->cleanup != NULL) {
 		t->p->cleanup(t->p->name);
@@ -541,8 +546,6 @@ static void _run_fork_test(struct test *t, struct job *j)
 	int pstdin[2];
 	int pstdout[2];
 	int pstderr[2];
-
-	memset(j, 0, sizeof(*j));
 
 	if (!_nocapture) {
 		_pipe(pstdin);
@@ -673,7 +676,6 @@ static void _run_fork_tests(struct tests *ts)
 			}
 
 			_flush_pipes(ts, jobsmm, N_ELEMENTS(jobs));
-			_cleanup_job(j, t);
 
 			if (t->flags.passed || (!t->flags.passed && t->p->expect_fail)) {
 				t->flags.passed = 1;
@@ -690,6 +692,7 @@ static void _run_fork_tests(struct tests *ts)
 
 			fflush(stdout);
 
+			_cleanup_job(j, t);
 			_run_next_fork_test(ts, j);
 			finished++;
 		}
@@ -930,6 +933,9 @@ void _pt_fail(
 	va_start(args, format);
 	vsnprintf(_tjob->fail_msg, sizeof(_tjob->fail_msg), format, args);
 	va_end(args);
+
+	fflush(stdout);
+	fflush(stderr);
 
 	if (_nofork) {
 		longjmp(_tfail, 1);
