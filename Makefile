@@ -5,6 +5,7 @@ TESTS = \
 	cleanup \
 	exit_status \
 	filter \
+	nocapture \
 	nofork \
 	nofork_fail \
 	null_stdout \
@@ -115,6 +116,9 @@ exit_status: % : test/%
 
 filter: % : test/%
 	$(VG) ./$^ -f run --filter=another -f two,others | grep "4 tests"
+
+nocapture: % : test/%
+	$(VG) ./$^ -n | grep "nocapture!" -q
 
 nofork: % : test/%
 	$(VG) ./$^ --nofork

@@ -113,14 +113,15 @@ $ gcc -g math_test.c paratec.c -o paratec && ./paratec
 
 The paratec binary comes equipped with the following options:
 
- Short Option | Long Option  | Env Variable | Description
- ------------ | ------------ | ------------ | -----------
-  `-f`        |  `--filter`  |  `PTFILTER`  |  Filter which tests are run: if a test has a given filter prefix, it will be run. This option may be given multiple times, and each value may be comma-separated to provide multiple filters. For example: with 4 tests, add, subtract, multiple, divide, and the filters "add", "subtract,divide", only multiply would not be run. On the command line, this would be `./paratec -f add --filter=subtract,divide`. As an environment variable, this would be `PTFILTER=add,subtract,divide`.
-  `-j`        |  `--jobs`    |  `PTJOBS`    |  Set the number of parallel tests to run. By default, this uses the number of CPUs on the machine + 1. Any positive integer > 0 is fine.
-  `-p`        |  `--port`    |  `PTPORT`    |  Specify where pt_get_port() should start handing out ports.
-  `-s`        |  `--nofork`  |  `PTNOFORK`  |  Throw caution to the wind and don't isolate test cases. This is useful for running tests in `gdb`.
-  `-t`        |  `--timeout` |  `PTTIMEOUT` |  Change the global timeout from 5 seconds to the given value.
-  `-v`        |  `--verbose` |  `PTVERBOSE` |  Print information about tests that succeed.
+ Short Option | Long Option    | Env Variable   | Description
+ ------------ | -------------- | -------------- | -----------
+  `-f`        |  `--filter`    |  `PTFILTER`    |  Filter which tests are run: if a test has a given filter prefix, it will be run. This option may be given multiple times, and each value may be comma-separated to provide multiple filters. For example: with 4 tests, add, subtract, multiple, divide, and the filters "add", "subtract,divide", only multiply would not be run. On the command line, this would be `./paratec -f add --filter=subtract,divide`. As an environment variable, this would be `PTFILTER=add,subtract,divide`.
+  `-j`        |  `--jobs`      |  `PTJOBS`      |  Set the number of parallel tests to run. By default, this uses the number of CPUs on the machine + 1. Any positive integer > 0 is fine.
+  `-n`        |  `--nocapture` |  `PTNOCAPTURE` |  Don't capture test output on stdout/stderr.
+  `-p`        |  `--port`      |  `PTPORT`      |  Specify where pt_get_port() should start handing out ports.
+  `-s`        |  `--nofork`    |  `PTNOFORK`    |  Throw caution to the wind and don't isolate test cases. This is useful for running tests in `gdb`.
+  `-t`        |  `--timeout`   |  `PTTIMEOUT`   |  Change the global timeout from 5 seconds to the given value.
+  `-v`        |  `--verbose`   |  `PTVERBOSE`   |  Print information about tests that succeed.
 
 ## Supported Platforms
 

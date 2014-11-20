@@ -92,6 +92,7 @@ struct tests {
 
 static uint32_t _max_jobs;
 static int _nofork;
+static int _nocapture;
 static uint32_t _port;
 static uint32_t _timeout;
 static int _verbose;
@@ -253,6 +254,7 @@ static void _print_usage(char **argv)
 	_print_opt("f FILTER", "filter=FILTER,...", "only run tests prefixed with FILTER, may be given multiple times");
 	_print_opt("h", "help", "print this messave");
 	_print_opt("j#CPU+1", "jobs=#CPU+1", "number of tests to run in parallel");
+	_print_opt("n", "nocapture", "don't capture stdout/stderr");
 	_print_opt("p" STR(PORT), "port=" STR(PORT), "port number to start handing out ports at");
 	_print_opt("s", "nofork", "run every test in a single process without isolation, buffering, or anything else");
 	_print_opt("t", "timeout", "set the global timeout for tests, in seconds");
@@ -275,6 +277,10 @@ static void _set_opt(char **argv, struct tests *ts, const char c)
 			if (_parse_uint32("jobs", optarg, &_max_jobs)) {
 				_print_usage(argv);
 			}
+			break;
+
+		case 'n':
+			_nocapture = 1;
 			break;
 
 		case 'p':
@@ -327,10 +333,11 @@ static void _set_opts(struct tests *ts, int argc, char **argv)
 	struct option lopts[] = {
 		{ "filter", required_argument, NULL, 'f' },
 		{ "help", no_argument, NULL, 'h' },
-		{ "nofork", no_argument, &_nofork, 's' },
 		{ "jobs", required_argument, NULL, 'j' },
+		{ "nocapture", no_argument, &_nocapture, 'n' },
+		{ "nofork", no_argument, &_nofork, 's' },
 		{ "port", required_argument, NULL, 'p' },
-		{ "timeout", no_argument, &_verbose, 't' },
+		{ "timeout", required_argument, NULL, 't' },
 		{ "verbose", no_argument, &_verbose, 'v' },
 		{ NULL, 0, NULL, 0 },
 	};
@@ -341,13 +348,14 @@ static void _set_opts(struct tests *ts, int argc, char **argv)
 
 	_setenvopt(argv, ts, "PTFILTER", 'f');
 	_setenvopt(argv, ts, "PTJOBS", 'j');
+	_setenvopt(argv, ts, "PTNOCAPTURE", 'n');
 	_setenvopt(argv, ts, "PTNOFORK", 's');
 	_setenvopt(argv, ts, "PTPORT", 'p');
 	_setenvopt(argv, ts, "PTTIMEOUT", 't');
 	_setenvopt(argv, ts, "PTVERBOSE", 'v');
 
 	while (1) {
-		char c = getopt_long(argc, argv, "f:hj:p:t:v", lopts, NULL);
+		char c = getopt_long(argc, argv, "f:hj:np:t:v", lopts, NULL);
 		if (c == -1) {
 			break;
 		}
@@ -432,6 +440,10 @@ static void _flush_pipes(struct tests *ts, struct job *jobs, uint32_t jobsc)
 {
 	uint32_t i;
 
+	if (_nocapture) {
+		return;
+	}
+
 	for (i = 0; i < jobsc; i++) {
 		struct job *j = jobs + i;
 
@@ -506,11 +518,13 @@ static void _run_test(struct test *t, struct job *j)
 
 static void _cleanup_job(struct job *j, struct test *t)
 {
-	close(j->stdout);
-	close(j->stderr);
 	j->pid = -1;
-	j->stdout = -1;
-	j->stderr = -1;
+	if (!_nocapture) {
+		close(j->stdout);
+		close(j->stderr);
+		j->stdout = -1;
+		j->stderr = -1;
+	}
 
 	strncpy(t->last_line, j->last_line, sizeof(t->last_line));
 	strncpy(t->fail_msg, j->fail_msg, sizeof(t->fail_msg));
@@ -530,9 +544,11 @@ static void _run_fork_test(struct test *t, struct job *j)
 
 	memset(j, 0, sizeof(*j));
 
-	_pipe(pstdin);
-	_pipe(pstdout);
-	_pipe(pstderr);
+	if (!_nocapture) {
+		_pipe(pstdin);
+		_pipe(pstdout);
+		_pipe(pstderr);
+	}
 
 	pid = fork();
 	if (pid == -1) {
@@ -543,9 +559,11 @@ static void _run_fork_test(struct test *t, struct job *j)
 	}
 
 	if (pid == 0) {
-		_dup2(STDIN_FILENO, pstdin[1]);
-		_dup2(STDOUT_FILENO, pstdout[1]);
-		_dup2(STDERR_FILENO, pstderr[1]);
+		if (!_nocapture) {
+			_dup2(STDIN_FILENO, pstdin[1]);
+			_dup2(STDOUT_FILENO, pstdout[1]);
+			_dup2(STDERR_FILENO, pstderr[1]);
+		}
 
 		err = setpgid(0, 0);
 		if (err < 0) {
@@ -557,10 +575,12 @@ static void _run_fork_test(struct test *t, struct job *j)
 
 		exit(0);
 	} else {
-		close(pstdin[0]);
+		if (!_nocapture) {
+			close(pstdin[0]);
+			j->stdout = pstdout[0];
+			j->stderr = pstderr[0];
+		}
 
-		j->stdout = pstdout[0];
-		j->stderr = pstderr[0];
 		j->pid = pid;
 		j->end_at = _now() + ((t->p->timeout ?: _timeout) * 1000 * 1000);
 	}
