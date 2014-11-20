@@ -556,7 +556,7 @@ static void _cleanup_job(struct job *j, struct test *t)
 	*j->fail_msg = '\0';
 
 	if (t->p->cleanup != NULL) {
-		t->p->cleanup(t->p->name);
+		t->p->cleanup(t->name);
 	}
 }
 
