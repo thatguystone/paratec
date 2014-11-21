@@ -8,6 +8,16 @@
 
 #include "../paratec.h"
 
+static void _mark()
+{
+	pt_mark();
+}
+
+static void _fail()
+{
+	pt_fail("here");
+}
+
 PARATEC(nofork)
 {
 	pt_seq("a", "a");
@@ -20,4 +30,26 @@ PARATEC(nofork)
 PARATEC(nofork_successful_failure, PTFAIL())
 {
 	pt_seq("a", "b");
+}
+
+PARATEC(nofork_failure)
+{
+	pt_seq("a", "b");
+}
+
+PARATEC(nofork_mark)
+{
+	_mark();
+	pt_seq("a", "b");
+}
+
+PARATEC(nofork_fail_outside)
+{
+	_fail();
+}
+
+PARATEC(nofork_fail_outside_marked)
+{
+	pt_mark();
+	_fail();
 }

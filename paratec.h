@@ -18,6 +18,9 @@
 
 #define PT_SECTION_NAME "paratec"
 
+#define PTXSTR(s) #s
+#define PTSTR(s) PTXSTR(s)
+
 #ifdef __linux__
 	#define PT_LINUX
 	#define PT_SECTION PT_SECTION_NAME
@@ -36,7 +39,8 @@
 	static struct paratec* __paratec_ ## test_fn \
 		__attribute((used,section(PT_SECTION))) \
 		= &(struct paratec){ \
-			.name = #test_fn, \
+			.fn_name = PTSTR(__paratec_test_ ## test_fn), \
+			.name = PTSTR(test_fn), \
 			.fn = __paratec_test_ ## test_fn, \
 			__VA_ARGS__ \
 		}; \
@@ -89,7 +93,7 @@
 /**
  * Mark that the test hit this line
  */
-#define pt_mark() _pt_mark(__FILE__, __LINE__)
+#define pt_mark() _pt_mark(__FILE__, __func__, __LINE__)
 
 /**
  * Fail right now with the given message.
@@ -253,6 +257,7 @@ const char* pt_get_name();
  * Used internally by paratec. Don't mess with any of this.
  */
 struct paratec {
+	char *fn_name;
 	char *name;
 	int exit_status;
 	int signal_num;
@@ -273,4 +278,5 @@ void _pt_fail(
 
 void _pt_mark(
 	const char *file,
+	const char *func,
 	const size_t line);

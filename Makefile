@@ -107,7 +107,7 @@ test/%: test/%.c paratec.c paratec.h
 #
 
 abort: % : test/%
-	$(VG) ./$^ | grep "Aborted" | grep after -q
+	$(VG) ./$^ | grep "Aborted" | grep "after test start (test/abort.c" -q
 
 asserts: % : test/%
 	$(VG) ./$^ > /dev/null
@@ -130,7 +130,10 @@ nocapture: % : test/%
 	$(VG) ./$^ -n | grep "nocapture!" -q
 
 nofork: % : test/%
-	$(VG) ./$^ --nofork
+	$(VG) ./$^ --nofork | grep "test/nofork.c:37 : Expected" -q
+	$(VG) ./$^ --nofork | grep "test/nofork.c:43 : Expected" -q
+	$(VG) ./$^ --nofork | grep "test start (test/nofork.c:18)" -q
+	$(VG) ./$^ --nofork | grep "test/nofork.c:53 (test/nofork.c:18)" -q
 
 nofork_fail: % : test/%
 	$(VG) ./$^ --nofork || [ $$? -eq 134 ]

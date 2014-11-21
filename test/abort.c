@@ -9,7 +9,18 @@
 #include <stdlib.h>
 #include "../paratec.h"
 
+static void _mark()
+{
+	pt_mark();
+}
+
 PARATEC(death)
 {
+	abort();
+}
+
+PARATEC(mark)
+{
+	_mark();
 	abort();
 }

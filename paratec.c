@@ -27,9 +27,6 @@
 	#include <mach/mach_time.h>
 #endif
 
-#define XSTR(s) #s
-#define STR(s) XSTR(s)
-
 #define SLEEP_TIME (10 * 1000)
 #define PORT 43120
 #define FAIL_EXIT_STATUS 255
@@ -51,8 +48,10 @@ struct job {
 	int64_t start;
 	int64_t end_at;
 	int timed_out;
-	char test_name[LINE_SIZE];
-	char last_line[LINE_SIZE];
+	char fn_name[LINE_SIZE]; // Paratec's function name for this test case
+	char test_name[LINE_SIZE]; // Print-friendly name for test case
+	char last_line[LINE_SIZE]; // Last line anywhere in the program that ran
+	char last_fn_line[LINE_SIZE]; // Last line in the test case that ran
 	char fail_msg[FAILMSG_SIZE];
 };
 
@@ -70,7 +69,7 @@ struct test {
 	int64_t i; // For ranged tests, the i in the range
 	struct buff stdout;
 	struct buff stderr;
-	char last_line[LINE_SIZE];
+	char last_line[LINE_SIZE * 2];
 	char fail_msg[FAILMSG_SIZE];
 	struct paratec *p;
 	struct {
@@ -300,7 +299,7 @@ static void _print_usage(char **argv)
 	_print_opt("h", "help", "print this messave");
 	_print_opt("j #CPU+1", "jobs=#CPU+1", "number of tests to run in parallel");
 	_print_opt("n", "nocapture", "don't capture stdout/stderr");
-	_print_opt("p " STR(PORT), "port=" STR(PORT), "port number to start handing out ports at");
+	_print_opt("p " PTSTR(PORT), "port=" PTSTR(PORT), "port number to start handing out ports at");
 	_print_opt("s", "nofork", "run every test in a single process without isolation, buffering, or anything else");
 	_print_opt("t", "timeout", "set the global timeout for tests, in seconds");
 	_print_opt("v", "verbose", "print information about tests that succeed");
@@ -547,8 +546,9 @@ static void _dup2(int std, int fd)
 static void _run_test(struct test *t, struct job *j)
 {
 	_tjob = j;
+	strncpy(_tjob->fn_name, t->p->fn_name, sizeof(_tjob->fn_name));
 	strncpy(_tjob->test_name, t->name, sizeof(_tjob->test_name));
-	strncpy(_tjob->last_line, "test start", sizeof(_tjob->last_line));
+	strncpy(_tjob->last_fn_line, "test start", sizeof(_tjob->last_fn_line));
 
 	if (t->p->setup != NULL) {
 		t->p->setup();
@@ -569,8 +569,15 @@ static void _cleanup_job(struct job *j, struct test *t)
 	}
 
 	t->duration = RUNTIME(j->start);
-	strncpy(t->last_line, j->last_line, sizeof(t->last_line));
+
 	strncpy(t->fail_msg, j->fail_msg, sizeof(t->fail_msg));
+	if (*j->last_line != '\0') {
+		snprintf(t->last_line, sizeof(t->last_line), "%s (%s)",
+			j->last_fn_line,
+			j->last_line);
+	} else {
+		strncpy(t->last_line, j->last_fn_line, sizeof(t->last_line));
+	}
 
 	j->pid = -1;
 	j->stdout = -1;
@@ -580,6 +587,7 @@ static void _cleanup_job(struct job *j, struct test *t)
 	j->end_at = INT64_MIN;
 	*j->test_name = '\0';
 	*j->last_line = '\0';
+	*j->last_fn_line = '\0';
 	*j->fail_msg = '\0';
 
 	if (t->p->cleanup != NULL) {
@@ -935,7 +943,7 @@ int main(int argc, char **argv)
 					t->duration);
 			}
 		} else if (t->exit_status == FAIL_EXIT_STATUS) {
-			printf(INDENT " FAIL : %s (%fs) : at %s : %s\n",
+			printf(INDENT " FAIL : %s (%fs) : %s : %s\n",
 				t->name,
 				t->duration,
 				t->last_line,
@@ -1024,7 +1032,13 @@ void _pt_fail(
 
 void _pt_mark(
 	const char *file,
+	const char *func,
 	const size_t line)
 {
-	snprintf(_tjob->last_line, sizeof(_tjob->last_line), "%s:%zu", file, line);
+	if (strcmp(_tjob->fn_name, func) == 0) {
+		*_tjob->last_line = '\0';
+		snprintf(_tjob->last_fn_line, sizeof(_tjob->last_fn_line), "%s:%zu", file, line);
+	} else {
+		snprintf(_tjob->last_line, sizeof(_tjob->last_line), "%s:%zu", file, line);
+	}
 }

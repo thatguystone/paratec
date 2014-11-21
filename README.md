@@ -34,16 +34,11 @@ And that's it. When you link in `paratec.c`, it will figure the rest out.
 
 `PARATEC` is used to declare tests, but you might have noticed `PTFAIL()` also in there. `PTFAIL()` just changes the test's behavior; there are a bunch of other options:
 
-* `PTCLEANUP(fn)`: always runs after the test has completed, even in case of
-  failure, outside of the test's environment to cleanup after the test. Making
-  any assertions in this callback will result in undefined behavior (this
-  essentially a free function, not part of your test!).
-* `PTDOWN(fn)`: add a teardown function to the test; only runs if the test
-  succeeds; you may run assertions here
+* `PTCLEANUP(fn)`: always runs after the test has completed, even in case of failure, outside of the test's environment to cleanup anything it  might have left behind. Making any assertions in this callback will result in undefined behavior.
+* `PTDOWN(fn)`: add a teardown function to the test; only runs if the test succeeds; you may run assertions here
 * `PTEXIT(status)`: expect this test to exit with the given exit status
 * `PTFAIL()`: expect this test to fail
-* `PTI(low, high)`: run the test for `(i = low; i < high; i++)`, passing the
-  current value of the iterator as `_i` to the test function
+* `PTI(low, high)`: run the test for `(i = low; i < high; i++)`, passing the current value of the iterator as `_i` to the test function
 * `PTSIG(num)`: expect this test to raise the given signal
 * `PTTIME(sec)`: set a test-specific timeout, in seconds as a double
 * `PTUP(fn)`: add a setup function to the test; you may run assertions here
@@ -148,6 +143,29 @@ The following are all valid filters:
 1. `--filter=test_two -f -test_two`: run no tests (first filters for test_two, then removes test_two).
 1. `--filter=test_,-test_two`: only run tests starting with "test_", except "test_two"
 1. `PTFILTER=test_,-test_two`: only run tests starting with "test_", except "test_two"
+
+## Test Output
+
+A lot of information is output on failure. Let's take the output of the `nofork` test as an example:
+
+```
+FFFF..
+33%: 6 tests, 0 errors, 4 failures, 0 skipped. Ran in 0.015742s
+     FAIL : nofork_fail_outside (0.000229s) : test start (test/nofork.c:18) : here
+     FAIL : nofork_fail_outside_marked (0.000247s) : test/nofork.c:53 (test/nofork.c:18) : here
+     FAIL : nofork_mark (0.000216s) : test/nofork.c:43 : Expected `a` == `b`
+     FAIL : nofork_failure (0.000218s) : test/nofork.c:37 : Expected `a` == `b`
+```
+
+The first line is a summary that prints while the test is running. It shows that 4 tests failed (`F`) and 2 passed (`.`).
+
+The next line gives a complete summary once all tests have finished, and it includes the total runtime.
+
+The next 4 lines highlight the failed tests, showing the test name, how long the test took to run, and where the test failed. `nofork_fail_outside` is a test where the assertion fails outside of the testing function; no assertions were ever hit inside the testing function. To note this, it outputs "test start" as the failure position in the test, and the in parenthesis gives the location of the failed assertion.
+
+Like the first failure, the second one failed outside the test function, but in this case, the test function executed an assertion before calling the failing function. This is noted by the location of the last assertion in the test function and the location of the failed assertion in parenthesis.
+
+The final two tests fail inside their testing functions, and they very simply output where the test failed.
 
 ## Supported Platforms
 
