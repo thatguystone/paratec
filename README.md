@@ -57,6 +57,10 @@ When testing a network server, picking out ports for running tons of tests simul
 
 Get the name of the currently-running test.
 
+`void pt_set_iter_name(const char *format, ...)`
+
+When running an iteration test, sometimes the name `test-name:1` (iteration with index 1) isn't helpful. This function allows you to change it to something like `test-name:good-description`. Use it like you would any printf() function.
+
 ## Assertions
 
 Note: Aside from the basic assertions, each assertion has a `*_msg()` counterpart that allows for a custom message with optional formatting.

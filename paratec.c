@@ -48,6 +48,7 @@ struct job {
 	int64_t start;
 	int64_t end_at;
 	int timed_out;
+	char iter_name[LINE_SIZE / 2];
 	char fn_name[LINE_SIZE]; // Paratec's function name for this test case
 	char test_name[LINE_SIZE]; // Print-friendly name for test case
 	char last_line[LINE_SIZE]; // Last line anywhere in the program that ran
@@ -77,6 +78,7 @@ struct test {
 		int filtered_run:1;
 		int passed:1;
 		int timed_out:1;
+		int is_ranged:1;
 	} flags;
 };
 
@@ -412,7 +414,6 @@ static void _add_test(struct tests *ts, struct paratec *p)
 {
 	int64_t i;
 	char idx[34];
-	int has_range = 0;
 
 	struct test t = {
 		.p = p,
@@ -425,7 +426,7 @@ static void _add_test(struct tests *ts, struct paratec *p)
 	if (p->range_low == 0 && p->range_high == 0) {
 		p->range_high = 1;
 	} else {
-		has_range = 1;
+		t.flags.is_ranged = 1;
 	}
 
 	for (i = p->range_low; i < p->range_high; i++) {
@@ -438,7 +439,7 @@ static void _add_test(struct tests *ts, struct paratec *p)
 			}
 		}
 
-		if (has_range) {
+		if (t.flags.is_ranged) {
 			snprintf(idx, sizeof(idx), ":%" PRId64, i);
 		} else {
 			idx[0] = '\0';
@@ -579,12 +580,20 @@ static void _cleanup_job(struct job *j, struct test *t)
 		strncpy(t->last_line, j->last_fn_line, sizeof(t->last_line));
 	}
 
+	if (t->flags.is_ranged && *j->iter_name != '\0') {
+		snprintf(t->name, sizeof(t->name), "%s:%" PRId64 ":%s",
+			t->p->name,
+			t->i,
+			j->iter_name);
+	}
+
 	j->pid = -1;
 	j->stdout = -1;
 	j->stderr = -1;
 	j->timed_out = 0;
 	j->start = INT64_MIN;
 	j->end_at = INT64_MIN;
+	*j->iter_name = '\0';
 	*j->test_name = '\0';
 	*j->last_line = '\0';
 	*j->last_fn_line = '\0';
@@ -990,6 +999,16 @@ uint16_t pt_get_port(uint8_t i)
 const char* pt_get_name()
 {
 	return _tjob->test_name;
+}
+
+void pt_set_iter_name(
+	const char *format,
+	...)
+{
+	va_list args;
+	va_start(args, format);
+	vsnprintf(_tjob->iter_name, sizeof(_tjob->iter_name), format, args);
+	va_end(args);
 }
 
 void _pt_fail(

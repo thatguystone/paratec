@@ -254,6 +254,14 @@ uint16_t pt_get_port(uint8_t i);
 const char* pt_get_name();
 
 /**
+ * Set the name of the current iteration test to something besides a number.
+ */
+__attribute__((format(printf, 1, 2)))
+void pt_set_iter_name(
+	const char *format,
+	...);
+
+/**
  * Used internally by paratec. Don't mess with any of this.
  */
 struct paratec {

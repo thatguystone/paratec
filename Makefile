@@ -145,7 +145,9 @@ port: % : test/%
 	$(VG) ./$^ > /dev/null
 
 range: % : test/%
-	$(VG) ./$^ > /dev/null
+	$(VG) ./$^ -v | grep "range_name:0:set_iter_name-" -q
+	$(VG) ./$^ -v | grep "range:2" -q
+	$(VG) ./$^ -v | grep ": not_range_with_set_name " -q
 
 simple: % : test/%
 	$(VG) ./$^ > /dev/null
