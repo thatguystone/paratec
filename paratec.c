@@ -10,6 +10,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <getopt.h>
+#include <pthread.h>
 #include <setjmp.h>
 #include <signal.h>
 #include <stdarg.h>
@@ -106,6 +107,9 @@ static jmp_buf _tfail;
 // Only for use in the parent process
 static struct job *_jobs;
 static uint32_t _jobsc;
+
+// When not forking, protect the longjmp!
+static pthread_t _pthself;
 
 static int64_t _now()
 {
@@ -858,7 +862,7 @@ int main(int argc, char **argv)
 	struct tests ts;
 
 	memset(&ts, 0, sizeof(ts));
-
+	_pthself = pthread_self();
 	_setup_signals();
 
 #ifdef PT_LINUX
@@ -992,6 +996,25 @@ void _pt_fail(
 	fflush(stderr);
 
 	if (_nofork) {
+		if (!pthread_equal(_pthself, pthread_self())) {
+			printf(
+				"************************************************************\n"
+				"*                          ERROR                           *\n"
+				"*                                                          *\n"
+				"* Whoa there! You can't make assertions from any thread    *\n"
+				"* but the testing thread when running in single-process    *\n"
+				"* mode. The faulty assertion follows.                      *\n"
+				"*                                                          *\n"
+				"************************************************************\n"
+				"\n"
+				"%s : %s\n",
+				_tjob->last_line,
+				_tjob->fail_msg);
+
+			fflush(stdout);
+			abort();
+		}
+
 		longjmp(_tfail, 1);
 	} else {
 		exit(FAIL_EXIT_STATUS);

@@ -95,6 +95,7 @@
  * Fail right now with the given message.
  */
 #define pt_fail(msg, ...) \
+	pt_mark(); \
 	_pt_fail(msg, ##__VA_ARGS__)
 
 /**
@@ -103,7 +104,7 @@
 #define pt(cond) \
 	pt_mark(); \
 	if (!(cond)) { \
-		pt_fail("`%s` failed", #cond); }
+		_pt_fail("`%s` failed", #cond); }
 
 /**
  * Like pt(), but allows you to give your own message.
@@ -111,7 +112,7 @@
 #define pt_msg(cond, msg, ...) \
 	pt_mark(); \
 	if (!(cond)) { \
-		pt_fail(msg, ##__VA_ARGS__); }
+		_pt_fail(msg, ##__VA_ARGS__); }
 
 /**
  * String assertions with custom messages
