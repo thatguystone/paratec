@@ -708,6 +708,7 @@ static void _run_fork_tests(struct tests *ts)
 	}
 
 	while (finished < ts->enabled) {
+		char summary_char;
 		struct test *t = NULL;
 
 		_signal_wait();
@@ -749,17 +750,20 @@ static void _run_fork_tests(struct tests *ts)
 			if (t->flags.passed || (!t->flags.passed && t->p->expect_fail)) {
 				t->flags.passed = 1;
 				ts->passes++;
-				printf(".");
+				summary_char = '.';
 			} else if (t->signal_num > 0) {
 				ts->errors++;
 				t->flags.timed_out = j->timed_out;
-				printf("E");
+				summary_char = 'E';
 			} else {
 				ts->failures++;
-				printf("F");
+				summary_char = 'F';
 			}
 
-			fflush(stdout);
+			if (!_nocapture) {
+				printf("%c", summary_char);
+				fflush(stdout);
+			}
 
 			_cleanup_job(j, t);
 			_run_next_fork_test(ts, j);
