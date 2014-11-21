@@ -12,6 +12,7 @@ PARATEC(strings)
 {
 	pt_seq("abcd", "abcd");
 	pt_sne("defg", "hijk");
+	pt_ss("defg", "ef");
 }
 
 PARATEC(memory)

@@ -127,6 +127,10 @@
 	pt_msg(0 op strcmp(__pt_a, __pt_b), msg, ##__VA_ARGS__); }
 #define pt_seq_msg(a, b, msg, ...) pt_str(a, ==, b, msg, ##__VA_ARGS__)
 #define pt_sne_msg(a, b, msg, ...) pt_str(a, !=, b, msg, ##__VA_ARGS__)
+#define pt_ss_msg(a, b, msg, ...) {\
+	const char* __pt_a = (a); \
+	const char* __pt_b = (b); \
+	pt_msg(strstr(a, b) != NULL, msg, ##__VA_ARGS__); }
 
 /**
  * String assertions
@@ -136,6 +140,7 @@
 		"Expected `%s` %s `%s`", __pt_a, #op, __pt_b); }
 #define pt_seq(a, b) pt_str(a, ==, b)
 #define pt_sne(a, b) pt_str(a, !=, b)
+#define pt_ss(a, b) pt_ss_msg(a, b, "`%s` does not contain `%s`", __pt_a, __pt_b)
 
 /**
  * Binary assertions with custom messages

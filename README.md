@@ -77,6 +77,7 @@ Note: Aside from the basic assertions, each assertion has a `*_msg()` counterpar
 * `pt_str(a, op, b)`: assert `op` on two strings
 * `pt_seq(a, b)`: assert that two strings are equal
 * `pt_sne(a, b)`: assert that two strings aren't equal
+* `pt_ss(a, b)`: assert that b is in a
 
 ### Binary Assertions
 
