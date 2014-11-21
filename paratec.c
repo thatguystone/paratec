@@ -759,6 +759,7 @@ static void _run_fork_tests(struct tests *ts)
 static void _run_nofork_test(struct tests *ts, struct test *t, struct job *j)
 {
 	if (setjmp(_tfail) == 0) {
+		j->start = _now();
 		_run_test(t, j);
 
 		ts->passes++;
