@@ -208,7 +208,7 @@
  */
 #define pt_int(a, op, b) { \
 	pt_int_msg(a, op, b, \
-		"Expected %" PRId64 " %s %" PRId64 " (off by %" PRId64 ")", \
+		"Expected %'" PRId64 " %s %'" PRId64 " (off by %'" PRId64 ")", \
 			__pt_a, #op, __pt_b, __pt_b - __pt_a); }
 #define pt_eq(a, b) pt_int(a, ==, b)
 #define pt_ne(a, b) pt_int(a, !=, b)
@@ -236,7 +236,7 @@
  */
 #define pt_uint(a, op, b) { \
 	pt_uint_msg(a, op, b, \
-		"Expected %" PRIu64 " %s %" PRIu64 " (off by %" PRId64 ")", \
+		"Expected %'" PRIu64 " %s %'" PRIu64 " (off by %'" PRId64 ")", \
 			__pt_a, #op, __pt_b, __pt_b - __pt_a); }
 #define pt_ueq(a, b) pt_uint(a, ==, b)
 #define pt_une(a, b) pt_uint(a, !=, b)

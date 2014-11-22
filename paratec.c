@@ -10,6 +10,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <getopt.h>
+#include <locale.h>
 #include <pthread.h>
 #include <setjmp.h>
 #include <signal.h>
@@ -882,6 +883,8 @@ int main(int argc, char **argv)
 	int64_t start;
 	uint32_t i;
 	struct tests ts;
+
+	setlocale(LC_NUMERIC, "");
 
 	memset(&ts, 0, sizeof(ts));
 	_pthself = pthread_self();
