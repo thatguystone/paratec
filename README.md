@@ -130,7 +130,7 @@ The paratec binary comes equipped with the following options:
   `-p`        |  `--port`      |  `PTPORT`      |  Specify where pt_get_port() should start handing out ports.
   `-s`        |  `--nofork`    |  `PTNOFORK`    |  Throw caution to the wind and don't isolate test cases. This is useful for running tests in `gdb`.
   `-t`        |  `--timeout`   |  `PTTIMEOUT`   |  Change the global timeout from 5 seconds to the given value.
-  `-v`        |  `--verbose`   |  `PTVERBOSE`   |  Print information about tests that succeed.
+  `-v`        |  `--verbose`   |  `PTVERBOSE`   |  Print information about tests that succeed. Pass multiple times to increase verbosity.
 
 ### Test Filtering
 

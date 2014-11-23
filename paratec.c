@@ -305,7 +305,7 @@ static void _print_usage(char **argv)
 	_print_opt("p " PTSTR(PORT), "port=" PTSTR(PORT), "port number to start handing out ports at");
 	_print_opt("s", "nofork", "run every test in a single process without isolation, buffering, or anything else");
 	_print_opt("t", "timeout", "set the global timeout for tests, in seconds");
-	_print_opt("v", "verbose", "print information about tests that succeed");
+	_print_opt("v", "verbose", "print information about tests that succeed; pass multiple times to increase verbosity");
 
 	exit(2);
 }
@@ -346,7 +346,11 @@ static void _set_opt(char **argv, struct tests *ts, const char c)
 			break;
 
 		case 'v':
-			_verbose = 1;
+			if (optarg == NULL) {
+				_verbose++;
+			} else {
+				_verbose += strlen(optarg) + 1;
+			}
 			break;
 
 		case 's':
@@ -385,7 +389,7 @@ static void _set_opts(struct tests *ts, int argc, char **argv)
 		{ "nofork", no_argument, &_nofork, 's' },
 		{ "port", required_argument, NULL, 'p' },
 		{ "timeout", required_argument, NULL, 't' },
-		{ "verbose", no_argument, &_verbose, 'v' },
+		{ "verbose", optional_argument, &_verbose, 'v' },
 		{ NULL, 0, NULL, 0 },
 	};
 
@@ -402,7 +406,7 @@ static void _set_opts(struct tests *ts, int argc, char **argv)
 	_setenvopt(argv, ts, "PTVERBOSE", 'v');
 
 	while (1) {
-		char c = getopt_long(argc, argv, "f:hj:np:st:v", lopts, NULL);
+		char c = getopt_long(argc, argv, "f:hj:np:st:v::", lopts, NULL);
 		if (c == -1) {
 			break;
 		}
@@ -952,7 +956,7 @@ int main(int argc, char **argv)
 					t->name);
 			}
 		} else if (t->flags.passed) {
-			dump = _verbose;
+			dump = !!_verbose;
 			if (dump) {
 				printf(INDENT " PASS : %s (%fs)\n",
 					t->name,
@@ -984,6 +988,7 @@ int main(int argc, char **argv)
 				strsignal(t->signal_num));
 		}
 
+		dump &= _verbose >= 2;
 		dumped = _clear_buff(dump, "stdout", &t->stdout);
 		dumped |= _clear_buff(dump, "stderr", &t->stderr);
 
