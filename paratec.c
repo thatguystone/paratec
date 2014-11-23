@@ -724,6 +724,8 @@ static void _run_fork_tests(struct tests *ts)
 			exit(1);
 		}
 
+		_flush_pipes(ts, jobsmm, N_ELEMENTS(jobs));
+
 		if (pid > 0) {
 			for (i = 0; i < N_ELEMENTS(jobs); i++) {
 				j = jobsmm + i;
@@ -750,8 +752,6 @@ static void _run_fork_tests(struct tests *ts)
 				continue;
 			}
 
-			_flush_pipes(ts, jobsmm, N_ELEMENTS(jobs));
-
 			if (t->flags.passed || (!t->flags.passed && t->p->expect_fail)) {
 				t->flags.passed = 1;
 				ts->passes++;
@@ -775,7 +775,6 @@ static void _run_fork_tests(struct tests *ts)
 			finished++;
 		}
 
-		_flush_pipes(ts, jobsmm, N_ELEMENTS(jobs));
 		_check_timeouts(jobsmm, N_ELEMENTS(jobs));
 	}
 
