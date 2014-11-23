@@ -95,6 +95,7 @@ struct tests {
 	struct test *all;
 };
 
+static int _exit_fast;
 static uint32_t _max_jobs;
 static int _nofork;
 static int _nocapture;
@@ -112,6 +113,15 @@ static uint32_t _jobsc;
 
 // When not forking, protect the longjmp!
 static pthread_t _pthself;
+
+static __attribute((noreturn)) void _exit_test(int status)
+{
+	if (_exit_fast) {
+		_exit(status);
+	} else {
+		exit(status);
+	}
+}
 
 static int64_t _now()
 {
@@ -298,6 +308,7 @@ static void _print_usage(char **argv)
 {
 	printf("Usage: %s [OPTION]...\n", argv[0]);
 	printf("\n");
+	_print_opt("e", "exit-fast", "after a test has finished, exit without calling any atexit() or on_exit() functions");
 	_print_opt("f FILTER", "filter=FILTER,...", "only run tests prefixed with FILTER, may be given multiple times");
 	_print_opt("h", "help", "print this messave");
 	_print_opt("j #CPU+1", "jobs=#CPU+1", "number of tests to run in parallel");
@@ -314,6 +325,10 @@ static void _set_opt(char **argv, struct tests *ts, const char c)
 {
 	switch (c) {
 		case 0:
+			break;
+
+		case 'e':
+			_exit_fast = 1;
 			break;
 
 		case 'f':
@@ -382,6 +397,7 @@ static void _setenvopt(
 static void _set_opts(struct tests *ts, int argc, char **argv)
 {
 	struct option lopts[] = {
+		{ "exit-fast", no_argument, &_exit_fast, 'e' },
 		{ "filter", required_argument, NULL, 'f' },
 		{ "help", no_argument, NULL, 'h' },
 		{ "jobs", required_argument, NULL, 'j' },
@@ -397,6 +413,7 @@ static void _set_opts(struct tests *ts, int argc, char **argv)
 	_port = PORT;
 	_timeout = 5;
 
+	_setenvopt(argv, ts, "PTEXITFAST", 'e');
 	_setenvopt(argv, ts, "PTFILTER", 'f');
 	_setenvopt(argv, ts, "PTJOBS", 'j');
 	_setenvopt(argv, ts, "PTNOCAPTURE", 'n');
@@ -406,7 +423,7 @@ static void _set_opts(struct tests *ts, int argc, char **argv)
 	_setenvopt(argv, ts, "PTVERBOSE", 'v');
 
 	while (1) {
-		char c = getopt_long(argc, argv, "f:hj:np:st:v::", lopts, NULL);
+		char c = getopt_long(argc, argv, "ef:hj:np:st:v::", lopts, NULL);
 		if (c == -1) {
 			break;
 		}
@@ -647,7 +664,7 @@ static void _run_fork_test(struct test *t, struct job *j)
 
 		_run_test(t, j);
 
-		exit(0);
+		_exit_test(0);
 	} else {
 		if (!_nocapture) {
 			close(pstdin[0]);
@@ -1057,7 +1074,7 @@ void _pt_fail(
 
 		longjmp(_tfail, 1);
 	} else {
-		exit(FAIL_EXIT_STATUS);
+		_exit_test(FAIL_EXIT_STATUS);
 	}
 }
 
