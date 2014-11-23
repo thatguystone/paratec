@@ -602,6 +602,10 @@ static void _cleanup_job(struct job *j, struct test *t)
 		strncpy(t->last_line, j->last_fn_line, sizeof(t->last_line));
 	}
 
+	if (t->p->cleanup != NULL) {
+		t->p->cleanup(t->name);
+	}
+
 	if (t->flags.is_ranged && *j->iter_name != '\0') {
 		snprintf(t->name, sizeof(t->name), "%s:%" PRId64 ":%s",
 			t->p->name,
@@ -620,10 +624,6 @@ static void _cleanup_job(struct job *j, struct test *t)
 	*j->last_line = '\0';
 	*j->last_fn_line = '\0';
 	*j->fail_msg = '\0';
-
-	if (t->p->cleanup != NULL) {
-		t->p->cleanup(t->name);
-	}
 }
 
 static void _run_fork_test(struct test *t, struct job *j)
