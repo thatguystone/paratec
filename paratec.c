@@ -305,7 +305,7 @@ static void _print_usage(char **argv)
 	_print_opt("p " PTSTR(PORT), "port=" PTSTR(PORT), "port number to start handing out ports at");
 	_print_opt("s", "nofork", "run every test in a single process without isolation, buffering, or anything else");
 	_print_opt("t", "timeout", "set the global timeout for tests, in seconds");
-	_print_opt("v", "verbose", "print information about tests that succeed; pass multiple times to increase verbosity");
+	_print_opt("v", "verbose", "be more verbose with the test summary; pass multiple times to increase verbosity");
 
 	exit(2);
 }
@@ -951,7 +951,7 @@ int main(int argc, char **argv)
 
 		if (!t->flags.run) {
 			dump = 0;
-			if (_verbose) {
+			if (_verbose >= 2) {
 				printf(INDENT " SKIP : %s \n",
 					t->name);
 			}
@@ -962,6 +962,8 @@ int main(int argc, char **argv)
 					t->name,
 					t->duration);
 			}
+
+			dump &= _verbose >= 3;
 		} else if (t->exit_status == FAIL_EXIT_STATUS) {
 			printf(INDENT " FAIL : %s (%fs) : %s : %s\n",
 				t->name,
@@ -988,7 +990,6 @@ int main(int argc, char **argv)
 				strsignal(t->signal_num));
 		}
 
-		dump &= _verbose >= 2;
 		dumped = _clear_buff(dump, "stdout", &t->stdout);
 		dumped |= _clear_buff(dump, "stderr", &t->stderr);
 

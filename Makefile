@@ -113,7 +113,7 @@ asserts: % : test/%
 	$(VG) ./$^ > /dev/null
 
 capture: % : test/%
-	$(VG) ./$^ -vv | [ `wc -l` -gt 1000 ]
+	$(VG) ./$^ -vvv | [ `wc -l` -gt 1000 ]
 
 cleanup: % : test/%
 	$(VG) ./$^ | grep "cleanup_test, everybody clean up!" -q
@@ -156,4 +156,4 @@ timeout: % : test/%
 	$(VG) ./$^ | grep "timed out" -q
 
 updown: % : test/%
-	$(VG) ./$^ -vv | grep "up-down" -q
+	$(VG) ./$^ -vvv | grep "up-down" -q

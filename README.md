@@ -130,7 +130,7 @@ The paratec binary comes equipped with the following options:
   `-p`        |  `--port`      |  `PTPORT`      |  Specify where pt_get_port() should start handing out ports.
   `-s`        |  `--nofork`    |  `PTNOFORK`    |  Throw caution to the wind and don't isolate test cases. This is useful for running tests in `gdb`.
   `-t`        |  `--timeout`   |  `PTTIMEOUT`   |  Change the global timeout from 5 seconds to the given value.
-  `-v`        |  `--verbose`   |  `PTVERBOSE`   |  Print information about tests that succeed. Pass multiple times to increase verbosity. `PTVERBOSE=` is the equivalent of `-v`; `PTVERBOSE=vv` is the equivalent of `-vvv`, and so forth.
+  `-v`        |  `--verbose`   |  `PTVERBOSE`   |  Be more verbose with the test summary. See [verbosity](#verbosity).
 
 ### Test Filtering
 
@@ -148,6 +148,16 @@ The following are all valid filters:
 1. `--filter=test_two -f -test_two`: run no tests (first filters for test_two, then removes test_two).
 1. `--filter=test_,-test_two`: only run tests starting with "test_", except "test_two"
 1. `PTFILTER=test_,-test_two`: only run tests starting with "test_", except "test_two"
+
+### Verbosity
+
+There are 3 levels of verbosity:
+
+1. `-v`: print tests that succeeded
+1. `-vv`: print skipped tests
+1. `-vvv`: print stdout/stderr of passed tests
+
+`PTVERBOSE=` is the equivalent of `-v`; `PTVERBOSE=vv` is the equivalent of `-vvv`, and so forth.
 
 ## Test Output
 
