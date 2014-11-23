@@ -124,7 +124,7 @@ The paratec binary comes equipped with the following options:
 
  Short Option | Long Option    | Env Variable   | Description
  ------------ | -------------- | -------------- | -----------
-  `-e`        |  `--exit-fast` |  `PTEXITFAST`  |  After a test has finished, exit without calling any atexit() or on_exit() functions. When running tons of tests, this can speed things up if you don't care about cleanup.
+  `-e`        |  `--exit-fast` |  `PTEXITFAST`  |  After a test has finished, exit without calling any atexit() or on_exit() functions. When running tons of tests, this can speed things up if you don't care about cleanup or coverage.
   `-f`        |  `--filter`    |  `PTFILTER`    |  See [test filtering](#test-filtering). May be given multiple times.
   `-j`        |  `--jobs`      |  `PTJOBS`      |  Set the number of parallel tests to run. By default, this uses the number of CPUs on the machine + 1. Any positive integer > 0 is fine.
   `-n`        |  `--nocapture` |  `PTNOCAPTURE` |  Don't capture test output on stdout/stderr.
