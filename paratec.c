@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/mman.h>
+#include <sys/ptrace.h>
 #include <sys/time.h>
 #include <sys/wait.h>
 #include <time.h>
@@ -238,6 +239,14 @@ static void _setup_signals()
 	}
 
 #endif
+}
+
+static void _detect_debugger()
+{
+	if (ptrace(PTRACE_TRACEME, 0, 1, 0) == -1) {
+		printf("Debugger detected. Disabling forking.")
+		_nofork = 1;
+	}
 }
 
 static void _filter_tests(struct tests *ts, const char *filter_)
@@ -909,6 +918,7 @@ int main(int argc, char **argv)
 	memset(&ts, 0, sizeof(ts));
 	_pthself = pthread_self();
 	_setup_signals();
+	_detect_debugger();
 
 #ifdef PT_LINUX
 
