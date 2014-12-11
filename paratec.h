@@ -10,6 +10,7 @@
  */
 
 #pragma once
+#include <errno.h>
 #include <inttypes.h>
 #include <signal.h>
 #include <stddef.h>
@@ -244,6 +245,14 @@
 #define pt_uge(a, b) pt_uint(a, >=, b)
 #define pt_ult(a, b) pt_uint(a, <, b)
 #define pt_ule(a, b) pt_uint(a, <=, b)
+
+/**
+ * For asserting return values that also set errno.
+ */
+#define pt_eno(a, b) { \
+	pt_eq_msg(a, b, \
+		"Expected %'" PRId64 " == %'" PRId64 ". Error %d: %s", \
+			__pt_a, __pt_b, errno, strerror(errno)); }
 
 /**
  * When testing network services, it's useful to have a unique port for the

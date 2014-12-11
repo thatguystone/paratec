@@ -112,6 +112,10 @@ Note: Aside from the basic assertions, each assertion has a `*_msg()` counterpar
 * `pt_ult(a, b)`: assert a < b
 * `pt_ule(a, b)`: assert a <= b
 
+### Errno assertion
+
+* `pt_errno(a, b)`: assert a == b, where a is some error return value and b is the expected value. The error message includes strerror(errno).
+
 ## Running Tests
 
 I'm sure you're already familiar with how to build things in C, but just in case:

@@ -5,6 +5,7 @@ TESTS = \
 	asserts \
 	capture \
 	cleanup \
+	errno \
 	exit_status \
 	filter \
 	nocapture \
@@ -117,6 +118,9 @@ capture: % : test/%
 
 cleanup: % : test/%
 	$(VG) ./$^ | grep "cleanup_test, everybody clean up!" -q
+
+errno: % : test/%
+	$(VG) ./$^ | grep "Expected -1 == 0. Error 98: Address already in use" -q
 
 exit_status: % : test/%
 	$(VG) ./$^ | grep "exit code=1" -q
