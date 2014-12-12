@@ -23,14 +23,25 @@ CFLAGS = \
 	-O2 \
 	-Wall \
 	-Wextra \
-	-Wshadow \
-	-Wformat=2 \
-	-Werror \
+	-Wcast-qual \
+	-Wdeclaration-after-statement \
 	-Wdisabled-optimization \
+	-Wformat=2 \
+	-Wmissing-prototypes \
+	-Wredundant-decls \
+	-Wshadow \
+	-Wstrict-prototypes \
+	-Wundef \
+	-Wwrite-strings \
+	-Werror \
 	-fstack-protector \
 	--param=ssp-buffer-size=4 \
 	-D_FORTIFY_SOURCE=2 \
-	-std=gnu99
+	-std=gnu99 \
+	-mfpmath=sse \
+	-msse \
+	-msse2 \
+	-std=gnu11
 
 ifeq ($(OS),Linux)
 	LDFLAGS = \

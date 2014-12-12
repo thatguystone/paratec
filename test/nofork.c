@@ -8,12 +8,12 @@
 
 #include "../paratec.h"
 
-static void _mark()
+static void _mark(void)
 {
 	pt_mark();
 }
 
-static void _fail()
+static void _fail(void)
 {
 	pt_fail("here");
 }

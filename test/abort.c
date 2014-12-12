@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include "../paratec.h"
 
-static void _mark()
+static void _mark(void)
 {
 	pt_mark();
 }

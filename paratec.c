@@ -123,7 +123,7 @@ static __attribute((noreturn)) void _exit_test(int status)
 	}
 }
 
-static int64_t _now()
+static int64_t _now(void)
 {
 	struct timespec t;
 
@@ -162,7 +162,7 @@ static int64_t _now()
 	return (((int64_t)t.tv_sec) * 1000000) + (t.tv_nsec / 1000);
 }
 
-static uint32_t _get_cpu_count()
+static uint32_t _get_cpu_count(void)
 {
 	int count;
 
@@ -174,7 +174,7 @@ static uint32_t _get_cpu_count()
 	return 1;
 }
 
-static void _signal_wait()
+static void _signal_wait(void)
 {
 #ifdef PT_LINUX
 
@@ -217,11 +217,13 @@ static void _sigint_handler(int sig)
 	raise(sig);
 }
 
-static void _setup_signals()
+static void _setup_signals(void)
 {
 	if (!_nofork) {
 		signal(SIGINT, _sigint_handler);
 	}
+
+	if (1) {
 
 #ifdef PT_LINUX
 
@@ -238,6 +240,8 @@ static void _setup_signals()
 	}
 
 #endif
+
+	}
 }
 
 static void _filter_tests(struct tests *ts, const char *filter_)
@@ -869,11 +873,11 @@ static int _clear_buff(int dump, const char *which, struct buff *b)
 	dump = dump && !_nofork && b->len > 0;
 
 	if (dump) {
-		printf(INDENT INDENT "%s\n", which);
-
 		int first = 1;
 		char *start = b->str;
 		size_t len = b->len;
+
+		printf(INDENT INDENT "%s\n", which);
 
 		while (1) {
 			char *nl = memmem(start, len, "\n", 1);
@@ -903,12 +907,7 @@ int main(int argc, char **argv)
 	int64_t start;
 	uint32_t i;
 	struct tests ts;
-
-	setlocale(LC_NUMERIC, "");
-
-	memset(&ts, 0, sizeof(ts));
-	_pthself = pthread_self();
-	_setup_signals();
+	struct paratec **sp;
 
 #ifdef PT_LINUX
 
@@ -929,8 +928,13 @@ int main(int argc, char **argv)
 
 #endif
 
-	struct paratec **sp = &__start_paratec;
+	setlocale(LC_NUMERIC, "");
 
+	memset(&ts, 0, sizeof(ts));
+	_pthself = pthread_self();
+	_setup_signals();
+
+	sp = &__start_paratec;
 	while (sp < &__stop_paratec) {
 		struct paratec *p = *sp;
 		_add_test(&ts, p);

@@ -9,12 +9,12 @@
 #include <stdio.h>
 #include "../paratec.h"
 
-static void _up()
+static void _up(void)
 {
 	printf("up-");
 }
 
-static void _down()
+static void _down(void)
 {
 	printf("down\n");
 }

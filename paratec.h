@@ -290,8 +290,8 @@ struct paratec {
 	int64_t range_low;
 	int64_t range_high;
 	void (*fn)(int64_t);
-	void (*setup)();
-	void (*teardown)();
+	void (*setup)(void);
+	void (*teardown)(void);
 	void (*cleanup)(const char*);
 };
 
