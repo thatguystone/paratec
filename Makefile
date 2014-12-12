@@ -41,7 +41,7 @@ CFLAGS = \
 	-mfpmath=sse \
 	-msse \
 	-msse2 \
-	-std=gnu11
+	-std=gnu99
 
 ifeq ($(OS),Linux)
 	LDFLAGS = \
