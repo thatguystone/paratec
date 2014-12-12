@@ -267,7 +267,7 @@ uint16_t pt_get_port(uint8_t i);
 /**
  * Get the name of the currently-running test
  */
-const char* pt_get_name();
+const char* pt_get_name(void);
 
 /**
  * Set the name of the current iteration test to something besides a number.
@@ -281,8 +281,8 @@ void pt_set_iter_name(
  * Used internally by paratec. Don't mess with any of this.
  */
 struct paratec {
-	char *fn_name;
-	char *name;
+	const char *fn_name;
+	const char *name;
 	int exit_status;
 	int signal_num;
 	double timeout;

@@ -298,7 +298,7 @@ static uint32_t _parse_uint32(const char *opt, const char *from, uint32_t *to)
 	return 0;
 }
 
-static void _print_opt(char *s, char *arg, char *desc)
+static void _print_opt(const char *s, const char *arg, const char *desc)
 {
 	printf(INDENT "-%s, --%s\n", s, arg);
 	printf(INDENT INDENT "%s\n", desc);
