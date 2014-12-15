@@ -891,7 +891,7 @@ static int _clear_buff(int dump, const char *which, struct buff *b)
 			first = 0;
 			*nl = '\0';
 			_dump_line(start, nl - start);
-			len -= nl - start;
+			len -= (nl - start) + 1;
 			start = nl + 1;
 		}
 	}
