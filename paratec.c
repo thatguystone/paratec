@@ -698,6 +698,7 @@ static void _run_next_fork_test(struct tests *ts, struct job *j)
 
 static void _run_fork_tests(struct tests *ts)
 {
+	int err;
 	pid_t pid;
 	uint32_t i;
 	int status;
@@ -708,6 +709,14 @@ static void _run_fork_tests(struct tests *ts)
 
 	if (ts->c == 0) {
 		return;
+	}
+
+	if (!_nocapture) {
+		err = setenv("LIBC_FATAL_STDERR_", "1", 1);
+		if (err < 0) {
+			perror("failed to set LIBC_FATAL_STDERR_");
+			exit(1);
+		}
 	}
 
 	jobsmm = mmap(
