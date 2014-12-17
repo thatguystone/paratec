@@ -15,3 +15,9 @@ PARATEC(timeout, PTTIME(.01))
 		usleep(1000 * 1000 * 1000);
 	}
 }
+
+PARATEC(timeout_msg, PTTIME(.01))
+{
+	pt_mark();
+	pt(usleep(1000 * 1000 * 1000));
+}

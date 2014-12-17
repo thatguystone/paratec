@@ -107,17 +107,17 @@
  * A most basic assertion. If false, fail.
  */
 #define pt(cond) \
-	pt_mark(); \
 	if (!(cond)) { \
-		_pt_fail("`%s` failed", #cond); }
+		pt_fail("`%s` failed", #cond); } \
+	pt_mark();
 
 /**
  * Like pt(), but allows you to give your own message.
  */
 #define pt_msg(cond, msg, ...) \
-	pt_mark(); \
 	if (!(cond)) { \
-		_pt_fail(msg, ##__VA_ARGS__); }
+		pt_fail(msg, ##__VA_ARGS__); } \
+	pt_mark();
 
 /**
  * String assertions with custom messages

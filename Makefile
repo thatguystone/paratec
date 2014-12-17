@@ -168,7 +168,8 @@ simple: % : test/%
 	$(VG) ./$^ > /dev/null
 
 timeout: % : test/%
-	$(VG) ./$^ | grep "timed out" -q
+	$(VG) ./$^ | grep "after test start : timed out" -q
+	$(VG) ./$^ | grep "after test/timeout.c:21 : timed out" -q
 
 updown: % : test/%
 	$(VG) ./$^ -vvv | grep "up-down" -q
