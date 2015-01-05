@@ -581,7 +581,9 @@ static void _run_test(struct test *t, struct job *j)
 		t->p->setup();
 	}
 
-	t->p->fn(t->i);
+	t->p->fn(t->i, t->p->vec == NULL ?
+		NULL :
+		((char*)t->p->vec) + (t->i * t->p->vecisize));
 
 	if (t->p->teardown != NULL) {
 		t->p->teardown();

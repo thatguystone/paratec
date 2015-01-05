@@ -32,20 +32,39 @@
 	#error Unsupported platform
 #endif
 
-/**
- * Run a unit test.
- */
-#define PARATEC(test_fn, ...) \
-	static void __paratec_test_ ## test_fn(int64_t); \
+#define __PARATEC(test_fn, ...) \
 	static struct paratec* __paratec_ ## test_fn \
 		__attribute((used,section(PT_SECTION))) \
 		= &(struct paratec){ \
 			.fn_name = PTSTR(__paratec_test_ ## test_fn), \
 			.name = PTSTR(test_fn), \
-			.fn = __paratec_test_ ## test_fn, \
+			.fn = (void(*)(int64_t, void*))__paratec_test_ ## test_fn, \
 			__VA_ARGS__ \
-		}; \
-	static void __paratec_test_ ## test_fn(int64_t _i __attribute((__unused__)))
+		};
+
+/**
+ * Run a unit test.
+ */
+#define PARATEC(test_fn, ...) \
+	static void __paratec_test_ ## test_fn(int64_t, void*); \
+	__PARATEC(test_fn, __VA_ARGS__) \
+	static void __paratec_test_ ## test_fn( \
+		int64_t _i __attribute((__unused__)), \
+		void *_t __attribute((__unused__)))
+
+/**
+ * Run a test for each item in `vec`.
+ */
+#define PARATECV(test_fn, tvec, ...) \
+	static void __paratec_test_ ## test_fn(int64_t, typeof(tvec[0])*); \
+	__PARATEC(test_fn, \
+		PTI(0, (sizeof(tvec) / sizeof((tvec)[0]))), \
+		.vec = tvec, \
+		.vecisize = sizeof((tvec)[0]), \
+		__VA_ARGS__) \
+	static void __paratec_test_ ## test_fn( \
+		int64_t _i __attribute((__unused__)), \
+		typeof(tvec[0]) *_t __attribute((__unused__)))
 
 /**
  * Run a unit test, expecting the given exit status.
@@ -289,7 +308,9 @@ struct paratec {
 	int expect_fail;
 	int64_t range_low;
 	int64_t range_high;
-	void (*fn)(int64_t);
+	void *vec;
+	size_t vecisize;
+	void (*fn)(int64_t, void*);
 	void (*setup)(void);
 	void (*teardown)(void);
 	void (*cleanup)(const char*);

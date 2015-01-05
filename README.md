@@ -13,6 +13,12 @@ It's really simple to get testing. Just write your test cases, link in `paratec.
 ```c
 #include "paratec.h"
 
+struct table_test {
+	int a;
+	int b;
+	int c;
+};
+
 // Declare a test case
 PARATEC(add)
 {
@@ -25,6 +31,32 @@ PARATEC(add, PTFAIL())
 {
 	int a = 0;
 	pt_gt(a, 100);
+}
+
+static struct table_test _table[] = {
+	{	.a = 0,
+		.b = 0,
+		.c = 0,
+	},
+	{	.a = 1,
+		.b = 1,
+		.c = 1,
+	},
+	{	.a = 2,
+		.b = 2,
+		.c = 2,
+	},
+};
+
+// Run a test case for each member of _table
+PARATECV(table_test, _table)
+{
+	// _t is set automatically to the item to test in _table
+	// _i is set automatically to the index of the item in _table
+
+	pt_eq(_t->a, _i);
+	pt_eq(_t->b, _i);
+	pt_eq(_t->c, _i);
 }
 ```
 
@@ -46,6 +78,12 @@ And that's it. When you link in `paratec.c`, it will figure the rest out.
 The function given to `PTDOWN` and `PTUP` must be of type `void (*fn)()`.
 
 The function given to `PTCLEANUP` must be of type `void (*fn)(const char *test_name)`, since it has no way of finding out the name of the test it's cleaning up after.
+
+### Table Tests
+
+Table tests are useful for when you need to test a single thing with a bunch of different inputs. Rather than copy-pasting the same code over and over again, modifying only the arguments, you can create a table (as seen in the example) and have paratec iterate it for you. This has the advantage that each iteration runs in its own environment and that each iteration is a separate test.
+
+`PARATECV(test_name, _table_vector)` is used to create such a test, and it takes all the same arguments as `PARATEC()`.
 
 ## API
 

@@ -12,6 +12,7 @@ TESTS = \
 	nofork \
 	nofork_fail \
 	null_stdout \
+	paratecv \
 	port \
 	range \
 	simple \
@@ -155,6 +156,9 @@ nofork_fail: % : test/%
 
 null_stdout: % : test/%
 	$(VG) ./$^ -v | grep '\0' -q
+
+paratecv: % : test/%
+	$(VG) ./$^ > /dev/null
 
 port: % : test/%
 	$(VG) ./$^ > /dev/null
