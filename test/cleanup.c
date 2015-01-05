@@ -9,10 +9,19 @@
 #include <stdio.h>
 #include "../paratec.h"
 
-static void _cleanup(const char *name)
+static void _cleanup(void)
 {
-	printf("%s, everybody clean up!\n", name);
+	printf("%s, everybody clean up!\n", pt_get_name());
 }
 
 PARATEC(cleanup_test, PTCLEANUP(_cleanup))
+{}
+
+static void _cleanupi(void)
+{
+	printf("i %d cleanup!\n", pt_get_port(0));
+
+}
+
+PARATEC(cleanup_testi, PTCLEANUP(_cleanupi), PTI(0, 16))
 {}

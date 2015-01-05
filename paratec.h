@@ -313,7 +313,7 @@ struct paratec {
 	void (*fn)(int64_t, void*);
 	void (*setup)(void);
 	void (*teardown)(void);
-	void (*cleanup)(const char*);
+	void (*cleanup)(void);
 };
 
 __attribute__((format(printf, 1, 2)))

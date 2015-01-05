@@ -609,7 +609,8 @@ static void _cleanup_job(struct job *j, struct test *t)
 	}
 
 	if (t->p->cleanup != NULL) {
-		t->p->cleanup(t->name);
+		_tjob = j;
+		t->p->cleanup();
 	}
 
 	if (t->flags.is_ranged && *j->iter_name != '\0') {

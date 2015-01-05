@@ -77,7 +77,7 @@ And that's it. When you link in `paratec.c`, it will figure the rest out.
 
 The function given to `PTDOWN` and `PTUP` must be of type `void (*fn)()`.
 
-The function given to `PTCLEANUP` must be of type `void (*fn)(const char *test_name)`, since it has no way of finding out the name of the test it's cleaning up after.
+The function given to `PTCLEANUP` must be of type `void (*fn)()`, and it may use `pt_get_port()` and `pt_get_name()` to find out which test it is cleaning up after.
 
 ### Table Tests
 
