@@ -755,15 +755,19 @@ static void _run_fork_tests(struct tests *ts)
 
 		_signal_wait();
 
-		pid = waitpid(-1, &status, WNOHANG);
-		if (pid == -1) {
-			perror("wait() failed");
-			exit(1);
-		}
+		while (finished < ts->enabled) {
+			pid = waitpid(-1, &status, WNOHANG);
+			if (pid == -1) {
+				perror("wait() failed");
+				exit(1);
+			}
 
-		_flush_pipes(ts, jobsmm, N_ELEMENTS(jobs));
+			_flush_pipes(ts, jobsmm, N_ELEMENTS(jobs));
 
-		if (pid > 0) {
+			if (pid == 0) {
+				break;
+			}
+
 			for (i = 0; i < N_ELEMENTS(jobs); i++) {
 				j = jobsmm + i;
 				if (j->pid == pid) {
