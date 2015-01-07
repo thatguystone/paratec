@@ -20,7 +20,6 @@ PARATEC(cleanup_test, PTCLEANUP(_cleanup))
 static void _cleanupi(void)
 {
 	printf("i %d cleanup!\n", pt_get_port(0));
-
 }
 
 PARATEC(cleanup_testi, PTCLEANUP(_cleanupi), PTI(0, 16))
