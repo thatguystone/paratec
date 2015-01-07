@@ -120,7 +120,7 @@ test/%: test/%.c paratec.c paratec.h
 #
 
 abort: % : test/%
-	$(VG) ./$^ | grep "Aborted" | grep "after test start (test/abort.c" -q
+	$(VG) ./$^ | grep "Abort" | grep "after test start (test/abort.c" -q
 
 asserts: % : test/%
 	$(VG) ./$^ > /dev/null
@@ -130,11 +130,11 @@ capture: % : test/%
 
 cleanup: % : test/%
 	$(VG) ./$^ | grep "cleanup_test, everybody clean up!" -q
-	$(VG) ./$^ -j 4 | grep "i 43120 cleanup" -q
-	$(VG) ./$^ -j 4 | grep "i 43123 cleanup" -q
+	$(VG) ./$^ -j 2 | grep "i 43120 cleanup" -q
+	$(VG) ./$^ -j 2 | grep "i 43121 cleanup" -q
 
 errno: % : test/%
-	$(VG) ./$^ | grep "Expected -1 == 0. Error 98: Address already in use" -q
+	$(VG) ./$^ | grep "Expected -1 == 0. Error 98:" -q
 
 exit_status: % : test/%
 	$(VG) ./$^ | grep "exit code=1" -q
