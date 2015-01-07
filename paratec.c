@@ -7,6 +7,7 @@
  */
 
 #define _GNU_SOURCE
+#include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <getopt.h>
@@ -713,6 +714,8 @@ static void _run_fork_tests(struct tests *ts)
 	struct job *jobsmm;
 	struct job jobs[_max_jobs];
 	uint32_t finished = 0;
+
+	assert(N_ELEMENTS(jobs) > 0);
 
 	if (ts->c == 0) {
 		return;
