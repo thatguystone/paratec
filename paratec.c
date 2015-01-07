@@ -637,14 +637,13 @@ static void _run_fork_test(struct test *t, struct job *j)
 {
 	int err;
 	pid_t pid;
-	int pstdin[2];
-	int pstdout[2];
-	int pstderr[2];
+	uint32_t i;
+	int pipes[3][2];
 
 	if (!_nocapture) {
-		_pipe(pstdin);
-		_pipe(pstdout);
-		_pipe(pstderr);
+		for (i = 0; i < 3; i++) {
+			_pipe(pipes[i]);
+		}
 	}
 
 	pid = fork();
@@ -657,9 +656,10 @@ static void _run_fork_test(struct test *t, struct job *j)
 
 	if (pid == 0) {
 		if (!_nocapture) {
-			_dup2(STDIN_FILENO, pstdin[1]);
-			_dup2(STDOUT_FILENO, pstdout[1]);
-			_dup2(STDERR_FILENO, pstderr[1]);
+			for (i = 0; i < 3; i++) {
+				close(pipes[i][0]);
+				_dup2(i, pipes[i][1]);
+			}
 		}
 
 		signal(SIGINT, SIG_DFL);
@@ -674,9 +674,13 @@ static void _run_fork_test(struct test *t, struct job *j)
 		_exit_test(0);
 	} else {
 		if (!_nocapture) {
-			close(pstdin[0]);
-			j->stdout = pstdout[0];
-			j->stderr = pstderr[0];
+			for (i = 0; i < 3; i++) {
+				close(pipes[i][1]);
+			}
+
+			close(pipes[STDIN_FILENO][0]);
+			j->stdout = pipes[STDOUT_FILENO][0];
+			j->stderr = pipes[STDERR_FILENO][0];
 		}
 
 		j->pid = pid;
