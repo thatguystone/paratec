@@ -266,6 +266,34 @@
 #define pt_ule(a, b) pt_uint(a, <=, b)
 
 /**
+ * Floating point assertions with custom messages
+ */
+#define pt_f_msg(a, op, b, msg, ...) { \
+	const double __pt_a = (a); \
+	const double __pt_b = (b); \
+	pt_msg(__pt_a op __pt_b, msg, ##__VA_ARGS__); }
+#define pt_feq_msg(a, b, msg, ...) pt_fint_msg(a, ==, b, msg, ##__VA_ARGS__)
+#define pt_fne_msg(a, b, msg, ...) pt_fint_msg(a, !=, b, msg, ##__VA_ARGS__)
+#define pt_fgt_msg(a, b, msg, ...) pt_fint_msg(a, >, b, msg, ##__VA_ARGS__)
+#define pt_fge_msg(a, b, msg, ...) pt_fint_msg(a, >=, b, msg, ##__VA_ARGS__)
+#define pt_flt_msg(a, b, msg, ...) pt_fint_msg(a, <, b, msg, ##__VA_ARGS__)
+#define pt_fle_msg(a, b, msg, ...) pt_fint_msg(a, <=, b, msg, ##__VA_ARGS__)
+
+/**
+ * Floating point assertions
+ */
+#define pt_f(a, op, b) { \
+	pt_f_msg(a, op, b, \
+		"Expected %'f %s %'f (off by %'f)", \
+			__pt_a, #op, __pt_b, __pt_b - __pt_a); }
+#define pt_feq(a, b) pt_f(a, ==, b)
+#define pt_fne(a, b) pt_f(a, !=, b)
+#define pt_fgt(a, b) pt_f(a, >, b)
+#define pt_fge(a, b) pt_f(a, >=, b)
+#define pt_flt(a, b) pt_f(a, <, b)
+#define pt_fle(a, b) pt_f(a, <=, b)
+
+/**
  * For asserting return values that also set errno.
  */
 #define pt_eno(a, b) { \

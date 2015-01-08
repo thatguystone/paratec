@@ -150,6 +150,15 @@ Note: Aside from the basic assertions, each assertion has a `*_msg()` counterpar
 * `pt_ult(a, b)`: assert a < b
 * `pt_ule(a, b)`: assert a <= b
 
+### Floating Point Assertions
+
+* `pt_feq(a, b)`: assert a == b
+* `pt_fne(a, b)`: assert a != b
+* `pt_fgt(a, b)`: assert a > b
+* `pt_fge(a, b)`: assert a >= b
+* `pt_flt(a, b)`: assert a < b
+* `pt_fle(a, b)`: assert a <= b
+
 ### Errno assertion
 
 * `pt_errno(a, b)`: assert a == b, where a is some error return value and b is the expected value. The error message includes strerror(errno).
