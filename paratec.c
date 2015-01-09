@@ -697,7 +697,7 @@ static void _run_bench(struct test *t, struct job *j)
 		if (ns_op == 0) {
 			N = MAX_BENCH_ITERS;
 		} else {
-			N = MAX_BENCH_ITERS / ns_op;
+			N = max_duration / ns_op;
 		}
 
 		N = MAX(MIN(N + N / 5, 100 * lastN), lastN + 1);
@@ -766,6 +766,7 @@ static void _cleanup_job(struct tests *ts, struct job *j, struct test *t)
 	j->pid = -1;
 	j->stdout = -1;
 	j->stderr = -1;
+	j->skipped = 0;
 	j->timed_out = 0;
 	j->start = INT64_MIN;
 	j->end_at = INT64_MIN;
@@ -958,9 +959,12 @@ static void _run_fork_tests(struct tests *ts)
 				fflush(stdout);
 			}
 
+			if (!j->skipped) {
+				finished++;
+			}
+
 			_cleanup_job(ts, j, t);
 			_run_next_fork_test(ts, j);
-			finished++;
 		}
 
 		_check_timeouts(jobsmm, N_ELEMENTS(jobs));
@@ -1158,8 +1162,7 @@ int main(int argc, char **argv)
 					t->bench.iters,
 					t->bench.ns_op);
 			} else {
-				dump = !!_verbose || t->p->bench;
-				if (dump) {
+				if (_verbose) {
 					printf(INDENT " PASS : %s (%fs)\n",
 						t->name,
 						t->duration);
