@@ -1124,7 +1124,7 @@ int main(int argc, char **argv)
 		}
 
 		if (t->p->bench) {
-			t->p->timeout = t->p->timeout ?: _bench_duration * 2;
+			t->p->timeout = t->p->timeout ?: (_bench_duration + 1) * 2;
 		}
 	}
 
