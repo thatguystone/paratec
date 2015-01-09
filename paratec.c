@@ -29,6 +29,7 @@
 	#include <mach/mach_time.h>
 #endif
 
+#define MAX_BENCH_ITERS 1000000000
 #define SLEEP_TIME (10 * 1000)
 #define PORT 43120
 #define FAIL_EXIT_STATUS 255
@@ -37,9 +38,15 @@
 #define LINE_SIZE 2048
 #define FAILMSG_SIZE 8192
 
-#define RUNTIME(start) ((_now() - start) / ((double)(1000 * 1000)))
+#define RUNTIME(start) ((_unow() - start) / ((double)(1000 * 1000)))
 #define MAX(a, b) (a > b ? a : b)
+#define MIN(a, b) (a < b ? a : b)
 #define N_ELEMENTS(arr) (sizeof(arr) / sizeof((arr)[0]))
+
+struct bench {
+	uint64_t iters; // How many iterations ran on the final call
+	uint64_t ns_op; // Time spent on each iteration
+};
 
 struct job {
 	uint32_t id;
@@ -50,6 +57,7 @@ struct job {
 	int64_t start;
 	int64_t end_at;
 	int timed_out;
+	struct bench bench;
 	char iter_name[LINE_SIZE / 2];
 	char fn_name[LINE_SIZE]; // Paratec's function name for this test case
 	char test_name[LINE_SIZE]; // Print-friendly name for test case
@@ -70,10 +78,12 @@ struct test {
 	int signal_num;
 	double duration;
 	int64_t i; // For ranged tests, the i in the range
+	void *titem; // For table-tests, the item in the table
 	struct buff stdout;
 	struct buff stderr;
 	char last_line[LINE_SIZE * 2];
 	char fail_msg[FAILMSG_SIZE];
+	struct bench bench;
 	struct paratec *p;
 	struct {
 		int run:1;
@@ -96,6 +106,8 @@ struct tests {
 	struct test *all;
 };
 
+static int _bench;
+static uint32_t _bench_duration;
 static int _exit_fast;
 static uint32_t _max_jobs;
 static int _nofork;
@@ -124,7 +136,7 @@ static __attribute((noreturn)) void _exit_test(int status)
 	}
 }
 
-static int64_t _now(void)
+static int64_t _nnow(void)
 {
 	struct timespec t;
 
@@ -160,7 +172,13 @@ static int64_t _now(void)
 
 #endif
 
-	return (((int64_t)t.tv_sec) * 1000000) + (t.tv_nsec / 1000);
+	return (((int64_t)t.tv_sec) * (1000 * 1000 * 1000)) + t.tv_nsec;
+
+}
+
+static int64_t _unow(void)
+{
+	return _nnow() / 1000;
 }
 
 static uint32_t _get_cpu_count(void)
@@ -313,6 +331,8 @@ static void _print_usage(char **argv)
 {
 	printf("Usage: %s [OPTION]...\n", argv[0]);
 	printf("\n");
+	_print_opt("b", "bench", "run benchmarks");
+	_print_opt("d 1", "bench-dur=1", "maximum time to run each benchmark for, in seconds (default=1)");
 	_print_opt("e", "exit-fast", "after a test has finished, exit without calling any atexit() or on_exit() functions");
 	_print_opt("f FILTER", "filter=FILTER,...", "only run tests prefixed with FILTER, may be given multiple times");
 	_print_opt("h", "help", "print this messave");
@@ -330,6 +350,25 @@ static void _set_opt(char **argv, struct tests *ts, const char c)
 {
 	switch (c) {
 		case 0:
+			break;
+
+		case 'b': {
+			uint32_t i;
+
+			_bench = 1;
+
+			for (i = 0; i < ts->c; i++) {
+				struct test *t = ts->all + i;
+				t->flags.filtered_run |= t->p->bench;
+			}
+
+			break;
+		}
+
+		case 'd':
+			if (_parse_uint32("bench-dur", optarg, &_bench_duration)) {
+				_print_usage(argv);
+			}
 			break;
 
 		case 'e':
@@ -402,6 +441,8 @@ static void _setenvopt(
 static void _set_opts(struct tests *ts, int argc, char **argv)
 {
 	struct option lopts[] = {
+		{ "bench", no_argument, &_bench, 'b' },
+		{ "bench-dur", required_argument, NULL, 'd' },
 		{ "exit-fast", no_argument, &_exit_fast, 'e' },
 		{ "filter", required_argument, NULL, 'f' },
 		{ "help", no_argument, NULL, 'h' },
@@ -414,6 +455,7 @@ static void _set_opts(struct tests *ts, int argc, char **argv)
 		{ NULL, 0, NULL, 0 },
 	};
 
+	_bench_duration = 1;
 	_max_jobs = _get_cpu_count() + 1;
 	_port = PORT;
 	_timeout = 5;
@@ -426,9 +468,11 @@ static void _set_opts(struct tests *ts, int argc, char **argv)
 	_setenvopt(argv, ts, "PTPORT", 'p');
 	_setenvopt(argv, ts, "PTTIMEOUT", 't');
 	_setenvopt(argv, ts, "PTVERBOSE", 'v');
+	_setenvopt(argv, ts, "PTBENCH", 'b');
+	_setenvopt(argv, ts, "PTBENCHDUR", 'd');
 
 	while (1) {
-		char c = getopt_long(argc, argv, "ef:hj:np:st:v::", lopts, NULL);
+		char c = getopt_long(argc, argv, "bd:ef:hj:np:st:v::", lopts, NULL);
 		if (c == -1) {
 			break;
 		}
@@ -445,7 +489,7 @@ static void _add_test(struct tests *ts, struct paratec *p)
 	struct test t = {
 		.p = p,
 		.flags = {
-			.run = 1,
+			.run = !p->bench,
 			.passed = 0,
 		},
 	};
@@ -473,6 +517,9 @@ static void _add_test(struct tests *ts, struct paratec *p)
 		}
 
 		t.i = i;
+		t.titem = p->vec == NULL ?
+			NULL :
+			((char*)p->vec) + (i * p->vecisize);
 		snprintf(t.name, sizeof(t.name), "%s%s", p->name, idx);
 
 		ts->all[ts->c++] = t;
@@ -532,7 +579,7 @@ static void _check_timeouts(struct job *jobs, uint32_t jobsc)
 {
 	int err;
 	uint32_t i;
-	int64_t now = _now();
+	int64_t now = _unow();
 
 	for (i = 0; i < jobsc; i++) {
 		struct job *j = jobs + i;
@@ -571,6 +618,96 @@ static void _dup2(int std, int fd)
 	}
 }
 
+static void _run_test_case(struct test *t)
+{
+	if (t->p->setup != NULL) {
+		t->p->setup();
+	}
+
+	t->p->fn(t->i, 0, t->titem);
+
+	if (t->p->teardown != NULL) {
+		t->p->teardown();
+	}
+}
+
+static uint32_t _nearest_pow_10(uint32_t n)
+{
+	uint32_t i;
+	uint32_t res = 1;
+	uint32_t tens = 0;
+
+	while (n >= 10) {
+		n = n / 10;
+		tens++;
+	}
+
+	for (i = 0; i < tens; i++) {
+		res *= 10;
+	}
+
+	return res;
+}
+
+static uint32_t _round_up(uint32_t n)
+{
+	static const int is[] = { 1, 2, 3, 5 };
+
+	uint32_t i;
+	uint32_t base = _nearest_pow_10(n);
+
+	for (i = 0; i < N_ELEMENTS(is); i++) {
+		if (n <= (is[i] * base)) {
+			return is[i] * base;
+		}
+	}
+
+	return 10 * base;
+}
+
+// This was pretty much lifted from Golang's benchmarking
+static void _run_bench(struct test *t, struct job *j)
+{
+	int64_t start;
+	uint32_t N = 1;
+	int64_t lastN = 0;
+	int64_t ns_op = 0;
+	int64_t duration = 0;
+	const int64_t max_duration = _bench_duration * 1000 * 1000 * 1000;
+
+	while (N < MAX_BENCH_ITERS && duration < max_duration) {
+		lastN = N;
+
+		if (t->p->setup != NULL) {
+			t->p->setup();
+		}
+
+		start = _nnow();
+
+		t->p->fn(t->i, N, t->titem);
+
+		duration = _nnow() - start;
+		ns_op = duration / N;
+
+		if (ns_op == 0) {
+			N = MAX_BENCH_ITERS;
+		} else {
+			N = MAX_BENCH_ITERS / ns_op;
+		}
+
+		N = MAX(MIN(N + N / 5, 100 * lastN), lastN + 1);
+		N = _round_up(N);
+
+
+		if (t->p->teardown != NULL) {
+			t->p->teardown();
+		}
+	}
+
+	j->bench.iters = lastN;
+	j->bench.ns_op = ns_op;
+}
+
 static void _run_test(struct test *t, struct job *j)
 {
 	_tjob = j;
@@ -578,16 +715,10 @@ static void _run_test(struct test *t, struct job *j)
 	strncpy(_tjob->test_name, t->name, sizeof(_tjob->test_name));
 	strncpy(_tjob->last_fn_line, "test start", sizeof(_tjob->last_fn_line));
 
-	if (t->p->setup != NULL) {
-		t->p->setup();
-	}
-
-	t->p->fn(t->i, t->p->vec == NULL ?
-		NULL :
-		((char*)t->p->vec) + (t->i * t->p->vecisize));
-
-	if (t->p->teardown != NULL) {
-		t->p->teardown();
+	if (t->p->bench) {
+		_run_bench(t, j);
+	} else {
+		_run_test_case(t);
 	}
 }
 
@@ -599,6 +730,7 @@ static void _cleanup_job(struct job *j, struct test *t)
 	}
 
 	t->duration = RUNTIME(j->start);
+	t->bench = j->bench;
 
 	strncpy(t->fail_msg, j->fail_msg, sizeof(t->fail_msg));
 	if (*j->last_line != '\0') {
@@ -685,7 +817,7 @@ static void _run_fork_test(struct test *t, struct job *j)
 		}
 
 		j->pid = pid;
-		j->start = _now();
+		j->start = _unow();
 		j->end_at = j->start + ((t->p->timeout ?: _timeout) * 1000 * 1000);
 	}
 }
@@ -828,7 +960,7 @@ static void _run_fork_tests(struct tests *ts)
 static void _run_nofork_test(struct tests *ts, struct test *t, struct job *j)
 {
 	if (setjmp(_tfail) == 0) {
-		j->start = _now();
+		j->start = _unow();
 		_run_test(t, j);
 
 		ts->passes++;
@@ -972,9 +1104,13 @@ int main(int argc, char **argv)
 			t->flags.run = 1;
 			ts.enabled++;
 		}
+
+		if (t->p->bench) {
+			t->p->timeout = t->p->timeout ?: _bench_duration * 2;
+		}
 	}
 
-	start = _now();
+	start = _unow();
 	_run_tests(&ts);
 
 	printf("%d%%: %" PRIu32 " tests, %" PRIu32 " errors, %" PRIu32 " failures, %" PRIu32 " skipped. Ran in %fs\n",
@@ -999,14 +1135,21 @@ int main(int argc, char **argv)
 					t->name);
 			}
 		} else if (t->flags.passed) {
-			dump = !!_verbose;
-			if (dump) {
-				printf(INDENT " PASS : %s (%fs)\n",
+			if (t->p->bench) {
+				dump = 1;
+				printf(INDENT "BENCH : %s (%'" PRIu64 " @ %'" PRIu64 " ns/op)\n",
 					t->name,
-					t->duration);
+					t->bench.iters,
+					t->bench.ns_op);
+			} else {
+				dump = !!_verbose || t->p->bench;
+				if (dump) {
+					printf(INDENT " PASS : %s (%fs)\n",
+						t->name,
+						t->duration);
+				}
+				dump &= _verbose >= 3;
 			}
-
-			dump &= _verbose >= 3;
 		} else if (t->exit_status == FAIL_EXIT_STATUS) {
 			printf(INDENT " FAIL : %s (%fs) : %s : %s\n",
 				t->name,

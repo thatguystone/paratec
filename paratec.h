@@ -38,7 +38,7 @@
 		= &(struct paratec){ \
 			.fn_name = PTSTR(__paratec_test_ ## test_fn), \
 			.name = PTSTR(test_fn), \
-			.fn = (void(*)(int64_t, void*))__paratec_test_ ## test_fn, \
+			.fn = (void(*)(int64_t, uint32_t, void*))__paratec_test_ ## test_fn, \
 			__VA_ARGS__ \
 		};
 
@@ -46,17 +46,18 @@
  * Run a unit test.
  */
 #define PARATEC(test_fn, ...) \
-	static void __paratec_test_ ## test_fn(int64_t, void*); \
+	static void __paratec_test_ ## test_fn(int64_t, uint32_t, void*); \
 	__PARATEC(test_fn, __VA_ARGS__) \
 	static void __paratec_test_ ## test_fn( \
 		int64_t _i __attribute((__unused__)), \
+		uint32_t _N __attribute((__unused__)), \
 		void *_t __attribute((__unused__)))
 
 /**
  * Run a test for each item in `vec`.
  */
 #define PARATECV(test_fn, tvec, ...) \
-	static void __paratec_test_ ## test_fn(int64_t, typeof(tvec[0])*); \
+	static void __paratec_test_ ## test_fn(int64_t, uint32_t, typeof(tvec[0])*); \
 	__PARATEC(test_fn, \
 		PTI(0, (sizeof(tvec) / sizeof((tvec)[0]))), \
 		.vec = tvec, \
@@ -64,6 +65,7 @@
 		__VA_ARGS__) \
 	static void __paratec_test_ ## test_fn( \
 		int64_t _i __attribute((__unused__)), \
+		uint32_t _N __attribute((__unused__)), \
 		typeof(tvec[0]) *_t __attribute((__unused__)))
 
 /**
@@ -109,6 +111,11 @@
  * Does: for (i = a; i < b; i++);
  */
 #define PTI(a, b) .range_low = a, .range_high = b
+
+/**
+ * This test is a benchmark
+ */
+#define PTBENCH() .bench = 1
 
 /**
  * Mark that the test hit this line
@@ -338,7 +345,8 @@ struct paratec {
 	int64_t range_high;
 	void *vec;
 	size_t vecisize;
-	void (*fn)(int64_t, void*);
+	int bench;
+	void (*fn)(int64_t, uint32_t, void*);
 	void (*setup)(void);
 	void (*teardown)(void);
 	void (*cleanup)(void);

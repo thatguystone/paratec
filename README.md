@@ -33,6 +33,16 @@ PARATEC(add, PTFAIL())
 	pt_gt(a, 100);
 }
 
+// Create a benchmark
+PARATEC(bench, PTBENCH())
+{
+	uint32_t i;
+
+	for (i = 0; i < _N; i++) {
+		// Code to time goes here
+	}
+}
+
 static struct table_test _table[] = {
 	{	.a = 0,
 		.b = 0,
@@ -66,6 +76,7 @@ And that's it. When you link in `paratec.c`, it will figure the rest out.
 
 `PARATEC` is used to declare tests, but you might have noticed `PTFAIL()` also in there. `PTFAIL()` just changes the test's behavior; there are a bunch of other options:
 
+* `PTBENCH()`: declare a benchmark; this is only run when benchmarks are enabled.
 * `PTCLEANUP(fn)`: always runs after the test has completed, even in case of failure, outside of the test's environment to cleanup anything it  might have left behind. Making any assertions in this callback will result in undefined behavior.
 * `PTDOWN(fn)`: add a teardown function to the test; only runs if the test succeeds; you may run assertions here
 * `PTEXIT(status)`: expect this test to exit with the given exit status
@@ -84,6 +95,12 @@ The function given to `PTCLEANUP` must be of type `void (*fn)()`, and it may use
 Table tests are useful for when you need to test a single thing with a bunch of different inputs. Rather than copy-pasting the same code over and over again, modifying only the arguments, you can create a table (as seen in the example) and have paratec iterate it for you. This has the advantage that each iteration runs in its own environment and that each iteration is a separate test.
 
 `PARATECV(test_name, _table_vector)` is used to create such a test, and it takes all the same arguments as `PARATEC()`.
+
+### Benchmarks
+
+Benchmarks are, by default, skipped. In order to run them, they must be enabled with `-b`/`--bench`/`PTBENCH=1`. Benchmarks are like any other test, except that they must run what they want to time in a loop (as in the example).
+
+A benchmark may be called multiple times as Paratec tries to scale the test to get good timings. Unlike a normal test, however, any cleanup function given is run _after_ all iterations and timings have finished. Also, any cleanup and teardown functions will be called directly before and after every set of iterations; that is, setup and teardown functions may be called multiple times for each benchmark.
 
 ## API
 
@@ -175,6 +192,8 @@ The paratec binary comes equipped with the following options:
 
  Short Option | Long Option    | Env Variable   | Description
  ------------ | -------------- | -------------- | -----------
+  `-b`        |  `--bench`     |  `PTBENCH`     |  Run benchmarks
+  `-d`        |  `--bench-dur` |  `PTBENCHDUR`  |  Run each benchmark for the given number of seconds. By default, each has 1 second.
   `-e`        |  `--exit-fast` |  `PTEXITFAST`  |  After a test has finished, exit without calling any atexit() or on_exit() functions. When running tons of tests, this can speed things up if you don't care about cleanup or coverage.
   `-f`        |  `--filter`    |  `PTFILTER`    |  See [test filtering](#test-filtering). May be given multiple times.
   `-j`        |  `--jobs`      |  `PTJOBS`      |  Set the number of parallel tests to run. By default, this uses the number of CPUs on the machine + 1. Any positive integer > 0 is fine.

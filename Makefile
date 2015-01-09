@@ -3,6 +3,7 @@ OS = $(shell uname -s)
 TESTS = \
 	abort \
 	asserts \
+	bench \
 	capture \
 	cleanup \
 	errno \
@@ -124,6 +125,11 @@ abort: % : test/%
 
 asserts: % : test/%
 	$(VG) ./$^ > /dev/null
+
+bench: % : test/%
+	OUT=`$(VG) ./$^ -b`; \
+		echo "$$OUT" | grep "no bench for you" -q && \
+		echo "$$OUT" | grep "BENCH" -q
 
 capture: % : test/%
 	$(VG) ./$^ -vvv | [ `wc -l` -gt 1000 ]
