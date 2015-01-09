@@ -17,6 +17,7 @@ TESTS = \
 	port \
 	range \
 	simple \
+	skip \
 	timeout \
 	updown
 
@@ -178,6 +179,10 @@ range: % : test/%
 
 simple: % : test/%
 	$(VG) ./$^ > /dev/null
+
+skip: % : test/%
+	$(VG) ./$^ -vvv | grep "1 skipped\|skipping this test" | [ `wc -l` -eq 2 ]
+	$(VG) ./$^ -s | grep "1 skipped\|skipping this test" | [ `wc -l` -eq 2 ]
 
 timeout: % : test/%
 	$(VG) ./$^ | grep "after test start : timed out" -q

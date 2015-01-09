@@ -309,10 +309,15 @@
 			__pt_a, __pt_b, errno, strerror(errno)); })
 
 /**
+ * Mark the current test as skipped and stop running it immediately.
+ */
+void pt_skip(void);
+
+/**
  * When testing network services, it's useful to have a unique port for the
  * service to listen on. This function will give you that port. This function
- * returns the same port number, per test, no matter how many times it's called,
- * for the given port index.
+ * returns the same port number, per test, no matter how many times it's
+ * called, for the given port index.
  *
  * When you need multiple ports, increment `i` and call again for another port.
  */

@@ -108,6 +108,10 @@ A benchmark may be called multiple times as Paratec tries to scale the test to g
 
 When testing a network server, picking out ports for running tons of tests simultaneously is error-prone. For that reason, you can find the awesome function `pt_get_port(uint8_t i)` at your disposal. This function will give you a unique port for your test, based on the index given. If you only need 1 port, then `i` will be 0; if you need more ports, increment `i` until you have what you need. All ports given are unique amongst all tests.
 
+`void pt_skip()`
+
+Mark the current test as skipped and stop running it immediately.
+
 `const char* pt_get_name()`
 
 Get the name of the currently-running test.

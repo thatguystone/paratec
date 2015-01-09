@@ -57,6 +57,7 @@ struct job {
 	int64_t start;
 	int64_t end_at;
 	int timed_out;
+	int skipped;
 	struct bench bench;
 	char iter_name[LINE_SIZE / 2];
 	char fn_name[LINE_SIZE]; // Paratec's function name for this test case
@@ -129,6 +130,10 @@ static pthread_t _pthself;
 
 static __attribute((noreturn)) void _exit_test(int status)
 {
+	if (_nofork) {
+		longjmp(_tfail, 1);
+	}
+
 	if (_exit_fast) {
 		_exit(status);
 	} else {
@@ -722,7 +727,7 @@ static void _run_test(struct test *t, struct job *j)
 	}
 }
 
-static void _cleanup_job(struct job *j, struct test *t)
+static void _cleanup_job(struct tests *ts, struct job *j, struct test *t)
 {
 	if (!_nocapture) {
 		close(j->stdout);
@@ -751,6 +756,11 @@ static void _cleanup_job(struct job *j, struct test *t)
 			t->p->name,
 			t->i,
 			j->iter_name);
+	}
+
+	if (j->skipped) {
+		ts->enabled--;
+		t->flags.run = 0;
 	}
 
 	j->pid = -1;
@@ -928,7 +938,9 @@ static void _run_fork_tests(struct tests *ts)
 				continue;
 			}
 
-			if (t->flags.passed || (!t->flags.passed && t->p->expect_fail)) {
+			if (j->skipped) {
+				summary_char = 'S';
+			} else if (t->flags.passed || (!t->flags.passed && t->p->expect_fail)) {
 				t->flags.passed = 1;
 				ts->passes++;
 				summary_char = '.';
@@ -946,7 +958,7 @@ static void _run_fork_tests(struct tests *ts)
 				fflush(stdout);
 			}
 
-			_cleanup_job(j, t);
+			_cleanup_job(ts, j, t);
 			_run_next_fork_test(ts, j);
 			finished++;
 		}
@@ -966,17 +978,19 @@ static void _run_nofork_test(struct tests *ts, struct test *t, struct job *j)
 		ts->passes++;
 		t->flags.passed = 1;
 	} else {
-		if (t->p->expect_fail) {
-			ts->passes++;
-			t->flags.passed = 1;
-		} else {
-			ts->failures++;
-			t->exit_status = FAIL_EXIT_STATUS;
-			t->flags.passed = 0;
+		if (!j->skipped) {
+			if (t->p->expect_fail) {
+				ts->passes++;
+				t->flags.passed = 1;
+			} else {
+				ts->failures++;
+				t->exit_status = FAIL_EXIT_STATUS;
+				t->flags.passed = 0;
+			}
 		}
 	}
 
-	_cleanup_job(j, t);
+	_cleanup_job(ts, j, t);
 }
 
 static void _run_nofork_tests(struct tests *ts)
@@ -1130,7 +1144,9 @@ int main(int argc, char **argv)
 
 		if (!t->flags.run) {
 			dump = 0;
+
 			if (_verbose >= 2) {
+				dump = 1;
 				printf(INDENT " SKIP : %s \n",
 					t->name);
 			}
@@ -1190,6 +1206,12 @@ int main(int argc, char **argv)
 	return ts.passes != ts.enabled;
 }
 
+void pt_skip(void)
+{
+	_tjob->skipped = 1;
+	_exit_test(0);
+}
+
 uint16_t pt_get_port(uint8_t i)
 {
 	return _port + _tjob->id + (i * _max_jobs);
@@ -1241,11 +1263,9 @@ void _pt_fail(
 			fflush(stdout);
 			abort();
 		}
-
-		longjmp(_tfail, 1);
-	} else {
-		_exit_test(FAIL_EXIT_STATUS);
 	}
+
+	_exit_test(FAIL_EXIT_STATUS);
 }
 
 void _pt_mark(
