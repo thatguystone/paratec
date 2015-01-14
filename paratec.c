@@ -364,7 +364,7 @@ static void _set_opt(char **argv, struct tests *ts, const char c)
 
 			for (i = 0; i < ts->c; i++) {
 				struct test *t = ts->all + i;
-				t->flags.filtered_run |= t->p->bench;
+				t->flags.run |= t->p->bench;
 			}
 
 			break;
