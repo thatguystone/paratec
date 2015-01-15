@@ -107,9 +107,9 @@ struct tests {
 	struct test *all;
 };
 
-static int _bench;
 static uint32_t _bench_duration;
 static int _exit_fast;
+static char *_filter;
 static uint32_t _max_jobs;
 static int _nofork;
 static int _nocapture;
@@ -268,21 +268,21 @@ static void _setup_signals(void)
 	}
 }
 
-static void _filter_tests(struct tests *ts, const char *filter_)
+static void _filter_tests(struct tests *ts)
 {
 	char *f;
-	char *filt;
 	uint32_t i;
-	char filter[strlen(filter_) + 1];
+	char *filter = _filter;
 
-	strcpy(filter, filter_);
-	filt = filter;
+	if (filter == NULL) {
+		return;
+	}
 
 	while (1) {
 		int neg;
 
-		f = strtok(filt, ", ");
-		filt = NULL;
+		f = strtok(filter, ", ");
+		filter = NULL;
 		if (f == NULL) {
 			break;
 		}
@@ -310,6 +310,9 @@ static void _filter_tests(struct tests *ts, const char *filter_)
 			}
 		}
 	}
+
+	free(_filter);
+	_filter = NULL;
 }
 
 static uint32_t _parse_uint32(const char *opt, const char *from, uint32_t *to)
@@ -360,8 +363,6 @@ static void _set_opt(char **argv, struct tests *ts, const char c)
 		case 'b': {
 			uint32_t i;
 
-			_bench = 1;
-
 			for (i = 0; i < ts->c; i++) {
 				struct test *t = ts->all + i;
 				t->flags.run |= t->p->bench;
@@ -380,9 +381,19 @@ static void _set_opt(char **argv, struct tests *ts, const char c)
 			_exit_fast = 1;
 			break;
 
-		case 'f':
-			_filter_tests(ts, optarg);
+		case 'f': {
+			int err;
+			char *old_filter = _filter;
+
+			err = asprintf(&_filter, "%s,%s", old_filter ?: "", optarg);
+			if (err < 0) {
+				perror("failed to create filter string");
+				exit(1);
+			}
+
+			free(old_filter);
 			break;
+		}
 
 		case 'j':
 			if (_parse_uint32("jobs", optarg, &_max_jobs)) {
@@ -446,7 +457,7 @@ static void _setenvopt(
 static void _set_opts(struct tests *ts, int argc, char **argv)
 {
 	struct option lopts[] = {
-		{ "bench", no_argument, &_bench, 'b' },
+		{ "bench", no_argument, NULL, 'b' },
 		{ "bench-dur", required_argument, NULL, 'd' },
 		{ "exit-fast", no_argument, &_exit_fast, 'e' },
 		{ "filter", required_argument, NULL, 'f' },
@@ -465,6 +476,8 @@ static void _set_opts(struct tests *ts, int argc, char **argv)
 	_port = PORT;
 	_timeout = 5;
 
+	_setenvopt(argv, ts, "PTBENCH", 'b');
+	_setenvopt(argv, ts, "PTBENCHDUR", 'd');
 	_setenvopt(argv, ts, "PTEXITFAST", 'e');
 	_setenvopt(argv, ts, "PTFILTER", 'f');
 	_setenvopt(argv, ts, "PTJOBS", 'j');
@@ -473,8 +486,6 @@ static void _set_opts(struct tests *ts, int argc, char **argv)
 	_setenvopt(argv, ts, "PTPORT", 'p');
 	_setenvopt(argv, ts, "PTTIMEOUT", 't');
 	_setenvopt(argv, ts, "PTVERBOSE", 'v');
-	_setenvopt(argv, ts, "PTBENCH", 'b');
-	_setenvopt(argv, ts, "PTBENCHDUR", 'd');
 
 	while (1) {
 		char c = getopt_long(argc, argv, "bd:ef:hj:np:st:v::", lopts, NULL);
@@ -702,7 +713,6 @@ static void _run_bench(struct test *t, struct job *j)
 
 		N = MAX(MIN(N + N / 5, 100 * lastN), lastN + 1);
 		N = _round_up(N);
-
 
 		if (t->p->teardown != NULL) {
 			t->p->teardown();
@@ -1115,6 +1125,7 @@ int main(int argc, char **argv)
 	}
 
 	_set_opts(&ts, argc, argv);
+	_filter_tests(&ts);
 
 	for (i = 0; i < ts.c; i++) {
 		struct test *t = ts.all + i;
