@@ -1145,11 +1145,12 @@ int main(int argc, char **argv)
 	start = _unow();
 	_run_tests(&ts);
 
-	printf("%d%%: %" PRIu32 " tests, %" PRIu32 " errors, %" PRIu32 " failures, %" PRIu32 " skipped. Ran in %fs\n",
+	printf("%d%%: of %" PRIu32 " tests run, %" PRIu32 " OK, %" PRIu32 " errors, %" PRIu32 " failures. %" PRIu32 " skipped. Ran in %fs\n",
 		ts.enabled == 0 ?
 			100 :
 			(int)((((double)ts.passes) / ts.enabled) * 100),
 		ts.enabled,
+		ts.enabled - (ts.errors + ts.failures),
 		ts.errors,
 		ts.failures,
 		ts.c - ts.enabled,
