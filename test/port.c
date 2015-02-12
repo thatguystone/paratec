@@ -11,6 +11,6 @@
 
 PARATEC(port)
 {
-	pt_ge(pt_get_port(0), 43120);
+	pt_ge(pt_get_port(0), 23120);
 	pt_ge(pt_get_port(1), pt_get_port(0));
 }

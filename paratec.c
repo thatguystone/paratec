@@ -31,7 +31,7 @@
 
 #define MAX_BENCH_ITERS 1000000000
 #define SLEEP_TIME (10 * 1000)
-#define PORT 43120
+#define PORT 23120
 #define FAIL_EXIT_STATUS 255
 #define INDENT "    "
 #define STDPREFIX INDENT INDENT " | "
