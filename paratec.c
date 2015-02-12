@@ -823,6 +823,9 @@ static void _run_fork_test(struct test *t, struct job *j)
 			exit(1);
 		}
 
+		setlinebuf(stdout);
+		setlinebuf(stderr);
+
 		_run_test(t, j);
 
 		_exit_test(0);
