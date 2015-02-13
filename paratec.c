@@ -1190,11 +1190,12 @@ int main(int argc, char **argv)
 				t->duration,
 				t->last_line,
 				t->fail_msg);
-		} else if (t->exit_status != 0) {
-			printf(INDENT " FAIL : %s (%fs) : after %s : exit code=%d\n",
+		} else if (t->exit_status != t->p->exit_status) {
+			printf(INDENT " FAIL : %s (%fs) : after %s : expected exit code=%d, got=%d\n",
 				t->name,
 				t->duration,
 				t->last_line,
+				t->p->exit_status,
 				t->exit_status);
 		} else if (t->flags.timed_out) {
 			printf(INDENT "ERROR : %s (%fs) : after %s : timed out\n",

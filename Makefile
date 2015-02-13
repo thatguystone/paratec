@@ -144,7 +144,7 @@ errno: % : test/%
 	$(VG) ./$^ | grep "Expected -1 == 0. Error 98:" -q
 
 exit_status: % : test/%
-	$(VG) ./$^ | grep "exit code=1" -q
+	$(VG) ./$^ | grep "expected exit code=0, got=1" -q
 
 filter: % : test/%
 	$(VG) ./$^ -f run --filter=another -f two,others | grep "4 tests"
