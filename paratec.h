@@ -32,15 +32,29 @@
 	#error Unsupported platform
 #endif
 
-#define __PARATEC(test_fn, ...) \
-	static struct paratec* __paratec_ ## test_fn \
-		__attribute((used,section(PT_SECTION))) \
-		= &(struct paratec){ \
-			.fn_name = PTSTR(__paratec_test_ ## test_fn), \
-			.name = PTSTR(test_fn), \
-			.fn = (void(*)(int64_t, uint32_t, void*))__paratec_test_ ## test_fn, \
-			__VA_ARGS__ \
-		};
+#ifdef __cplusplus
+	#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+
+	#define __PARATEC(test_fn, ...) \
+		static struct paratec* __paratec_ ## test_fn \
+			__attribute((used,section(PT_SECTION))) \
+			= new paratec{ \
+				.fn_name = PTSTR(__paratec_test_ ## test_fn), \
+				.name = PTSTR(test_fn), \
+				.fn = (void(*)(int64_t, uint32_t, void*))__paratec_test_ ## test_fn, \
+				__VA_ARGS__ \
+			};
+#else
+	#define __PARATEC(test_fn, ...) \
+		static struct paratec* __paratec_ ## test_fn \
+			__attribute((used,section(PT_SECTION))) \
+			= &(struct paratec){ \
+				.fn_name = PTSTR(__paratec_test_ ## test_fn), \
+				.name = PTSTR(test_fn), \
+				.fn = (void(*)(int64_t, uint32_t, void*))__paratec_test_ ## test_fn, \
+				__VA_ARGS__ \
+			};
+#endif
 
 /**
  * Run a unit test.
