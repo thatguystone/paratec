@@ -322,6 +322,10 @@
 		"Expected %'" PRId64 " == %'" PRId64 ". Error %d: %s", \
 			__pt_a, __pt_b, errno, strerror(errno)); })
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Mark the current test as skipped and stop running it immediately.
  */
@@ -380,3 +384,7 @@ void _pt_mark(
 	const char *file,
 	const char *func,
 	const size_t line);
+
+#ifdef __cplusplus
+}
+#endif
