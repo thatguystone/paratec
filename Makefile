@@ -19,7 +19,8 @@ TESTS = \
 	simple \
 	skip \
 	timeout \
-	updown
+	updown \
+	wait_for
 
 CFLAGS = \
 	-g \
@@ -121,7 +122,7 @@ test/%: test/%.c paratec.c paratec.h
 # ==============================================================================
 #
 
-asserts paratecv port simple: % : test/%
+asserts paratecv port simple wait_for: % : test/%
 	$(VG) ./$^ > /dev/null
 
 abort: % : test/%

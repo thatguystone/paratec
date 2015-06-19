@@ -12,6 +12,7 @@
 #pragma once
 #include <errno.h>
 #include <inttypes.h>
+#include <sched.h>
 #include <signal.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -326,6 +327,17 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * Wait for the given condition to become true
+ */
+#define pt_wait_for(cond) ({ \
+	unsigned __pt_spins = 0; \
+	while (!(cond)) { \
+		if (++__pt_spins > 1024) { \
+			sched_yield(); \
+		} \
+	} })
 
 /**
  * Mark the current test as skipped and stop running it immediately.
