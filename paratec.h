@@ -33,6 +33,7 @@
 #endif
 
 #ifdef __cplusplus
+	#pragma GCC diagnostic push
 	#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 
 	#define __PARATEC(test_fn, ...) \
@@ -387,4 +388,5 @@ void _pt_mark(
 
 #ifdef __cplusplus
 }
+#pragma GCC diagnostic pop
 #endif
