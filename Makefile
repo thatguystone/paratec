@@ -121,11 +121,11 @@ test/%: test/%.c paratec.c paratec.h
 # ==============================================================================
 #
 
+asserts paratecv port simple: % : test/%
+	$(VG) ./$^ > /dev/null
+
 abort: % : test/%
 	$(VG) ./$^ | grep "Abort" | grep "after test start (test/abort.c" -q
-
-asserts: % : test/%
-	$(VG) ./$^ > /dev/null
 
 bench: % : test/%
 	OUT=`$(VG) ./$^ -b`; \
@@ -166,19 +166,10 @@ nofork_fail: % : test/%
 null_stdout: % : test/%
 	$(VG) ./$^ -v | grep '\0' -q
 
-paratecv: % : test/%
-	$(VG) ./$^ > /dev/null
-
-port: % : test/%
-	$(VG) ./$^ > /dev/null
-
 range: % : test/%
 	$(VG) ./$^ -v | grep "range_name:0:set_iter_name-" -q
 	$(VG) ./$^ -v | grep "range:2" -q
 	$(VG) ./$^ -v | grep ": not_range_with_set_name " -q
-
-simple: % : test/%
-	$(VG) ./$^ > /dev/null
 
 skip: % : test/%
 	$(VG) ./$^ -vvv | grep "1 skipped\|skipping this test" | [ `wc -l` -eq 2 ]
