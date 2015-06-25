@@ -3,3 +3,4 @@ libparatec.pc
 libparatec.so
 test/*
 !test/*.c
+!test/*.cpp
