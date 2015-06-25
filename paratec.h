@@ -34,9 +34,6 @@
 #endif
 
 #ifdef __cplusplus
-	#pragma GCC diagnostic push
-	#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
-
 	#define __PARATEC(test_fn, ...) \
 		static struct paratec* __paratec_ ## test_fn \
 			__attribute((used,section(PT_SECTION))) \
@@ -400,5 +397,4 @@ void _pt_mark(
 
 #ifdef __cplusplus
 }
-#pragma GCC diagnostic pop
 #endif

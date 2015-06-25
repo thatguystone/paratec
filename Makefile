@@ -22,30 +22,41 @@ TESTS = \
 	updown \
 	wait_for
 
-CFLAGS = \
+ifneq (,$(findstring clang++,$(CXX)))
+	TESTS := $(TESTS) \
+		cpp
+endif
+
+CFLAGS_BASE = \
 	-g \
 	-O2 \
 	-Wall \
 	-Wextra \
 	-Wcast-qual \
-	-Wdeclaration-after-statement \
 	-Wdisabled-optimization \
 	-Wformat=2 \
-	-Wmissing-prototypes \
 	-Wredundant-decls \
 	-Wshadow \
-	-Wstrict-prototypes \
 	-Wundef \
 	-Wwrite-strings \
 	-Werror \
 	-fstack-protector \
 	--param=ssp-buffer-size=4 \
 	-D_FORTIFY_SOURCE=2 \
-	-std=gnu99 \
 	-mfpmath=sse \
 	-msse \
-	-msse2 \
+	-msse2
+
+CFLAGS = \
+	$(CFLAGS_BASE) \
+	-Wdeclaration-after-statement \
+	-Wmissing-prototypes \
+	-Wstrict-prototypes \
 	-std=gnu99
+
+CXXFLAGS = \
+	$(CFLAGS_BASE) \
+	-std=gnu++11
 
 ifeq ($(OS),Linux)
 	LDFLAGS = \
@@ -72,6 +83,12 @@ all: libparatec.so libparatec.a libparatec.pc
 
 test: $(TESTS)
 	@echo "SUCCESS"
+
+test-all:
+	$(MAKE) clean
+	CC=gcc CXX=g++ $(MAKE) test
+	$(MAKE) clean
+	CC=clang CXX=clang++ $(MAKE) test
 
 valgrind: VG = $(MEMCHECK)
 valgrind: test
@@ -113,7 +130,10 @@ libparatec.pc: libparatec.pc.in
 		-e 's|{PREFIX}|$(PREFIX)|' \
 		$< > $@
 
-test/%: test/%.c paratec.c paratec.h
+test/paratec.o: paratec.c paratec.h
+	$(CC) $(CFLAGS) -c -o $@ $< $(LDFLAGS)
+
+test/%: test/%.c test/paratec.o
 	$(CC) $(CFLAGS) test/$*.c paratec.c -o test/$* $(LDFLAGS)
 
 #
@@ -140,6 +160,10 @@ cleanup: % : test/%
 	$(VG) ./$^ | grep "cleanup_test, everybody clean up!" -q
 	$(VG) ./$^ -j 2 | grep "i 23120 cleanup" -q
 	$(VG) ./$^ -j 2 | grep "i 23121 cleanup" -q
+
+cpp: test/cpp.cpp test/paratec.o
+	$(CXX) $(CXXFLAGS) $^ -o test/$@ $(LDFLAGS)
+	$(VG) ./test/$@ | grep "cleanup_test, everybody clean up!" -q
 
 errno: % : test/%
 	$(VG) ./$^ | grep "Expected -1 == 0. Error 98:" -q

@@ -6,6 +6,8 @@ Unit testing is hard enough already, so let's try to make it a bit easier. Parat
 
 Drop `paratec.{c,h}` in your project, add them to your build, and you should be off running.
 
+> Note: for C++ support, you'll need a recent version of clang++ or g++ >= 5.
+
 ## Let's get testing
 
 It's really simple to get testing. Just write your test cases, link in `paratec.c` (which includes a main() function), and execute the binary.

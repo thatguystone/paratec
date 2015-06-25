@@ -6,6 +6,6 @@ os:
     - linux
     - osx
 
-compiler:
-    - clang
-    - gcc
+env:
+    - CC=clang CXX=clang++
+    - CC=gcc CXX=g++
