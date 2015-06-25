@@ -108,7 +108,7 @@ uninstall:
 	rm -f $(INSTALL_PKGCFG_DIR)/libparatec.pc
 
 clean:
-	rm -f $(TESTS:%=test/%)
+	rm -f $(TESTS:%=test/%) test/cpp
 	rm -rf $(TESTS:%=test/%.dSYM)
 	rm -f libparatec.so libparatec.a
 	rm -f libparatec.pc
