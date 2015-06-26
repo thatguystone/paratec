@@ -110,6 +110,7 @@ uninstall:
 clean:
 	rm -f $(TESTS:%=test/%) test/cpp
 	rm -rf $(TESTS:%=test/%.dSYM)
+	rm -f test/paratec.o
 	rm -f libparatec.so libparatec.a
 	rm -f libparatec.pc
 
@@ -131,7 +132,7 @@ libparatec.pc: libparatec.pc.in
 		$< > $@
 
 test/paratec.o: paratec.c paratec.h
-	$(CC) $(CFLAGS) -c -o $@ $< $(LDFLAGS)
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 test/%: test/%.c test/paratec.o
 	$(CC) $(CFLAGS) test/$*.c paratec.c -o test/$* $(LDFLAGS)
