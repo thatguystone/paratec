@@ -76,3 +76,13 @@ PARATEC(uint_fail_msg, PTFAIL())
 {
 	pt_ueq_msg(1, 2, "We're all going to die!");
 }
+
+PARATEC(f_fail, PTFAIL())
+{
+	pt_feq(1.0, 2.0);
+}
+
+PARATEC(f_fail_msg, PTFAIL())
+{
+	pt_feq_msg(1.0, 2.0, "We're all going to die!");
+}

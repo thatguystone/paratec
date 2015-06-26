@@ -292,12 +292,12 @@
 	const double __pt_a = (a); \
 	const double __pt_b = (b); \
 	pt_msg(__pt_a op __pt_b, msg, ##__VA_ARGS__); })
-#define pt_feq_msg(a, b, msg, ...) pt_fint_msg(a, ==, b, msg, ##__VA_ARGS__)
-#define pt_fne_msg(a, b, msg, ...) pt_fint_msg(a, !=, b, msg, ##__VA_ARGS__)
-#define pt_fgt_msg(a, b, msg, ...) pt_fint_msg(a, >, b, msg, ##__VA_ARGS__)
-#define pt_fge_msg(a, b, msg, ...) pt_fint_msg(a, >=, b, msg, ##__VA_ARGS__)
-#define pt_flt_msg(a, b, msg, ...) pt_fint_msg(a, <, b, msg, ##__VA_ARGS__)
-#define pt_fle_msg(a, b, msg, ...) pt_fint_msg(a, <=, b, msg, ##__VA_ARGS__)
+#define pt_feq_msg(a, b, msg, ...) pt_f_msg(a, ==, b, msg, ##__VA_ARGS__)
+#define pt_fne_msg(a, b, msg, ...) pt_f_msg(a, !=, b, msg, ##__VA_ARGS__)
+#define pt_fgt_msg(a, b, msg, ...) pt_f_msg(a, >, b, msg, ##__VA_ARGS__)
+#define pt_fge_msg(a, b, msg, ...) pt_f_msg(a, >=, b, msg, ##__VA_ARGS__)
+#define pt_flt_msg(a, b, msg, ...) pt_f_msg(a, <, b, msg, ##__VA_ARGS__)
+#define pt_fle_msg(a, b, msg, ...) pt_f_msg(a, <=, b, msg, ##__VA_ARGS__)
 
 /**
  * Floating point assertions
