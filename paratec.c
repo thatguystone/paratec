@@ -495,6 +495,10 @@ static void _set_opts(struct tests *ts, int argc, char **argv)
 
 		_set_opt(argv, ts, c);
 	}
+
+	if (_nofork) {
+		_nocapture = 1;
+	}
 }
 
 static void _add_test(struct tests *ts, struct paratec *p)
