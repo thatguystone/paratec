@@ -12,4 +12,13 @@ PARATEC(assert_errno)
 {
 	errno = 98;
 	pt_eno(-1, 0);
+
+	pt_noe(0);
+	pt_noe(123);
+}
+
+PARATEC(assert_noerror, PTFAIL())
+{
+	errno = 98;
+	pt_noe(-1);
 }

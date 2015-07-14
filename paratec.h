@@ -308,6 +308,9 @@
 	pt_eq_msg(a, b, \
 		"Expected %'" PRId64 " == %'" PRId64 ". Error %d: %s", \
 			__pt_a, __pt_b, errno, strerror(errno)); })
+#define pt_noe(a) \
+	pt_ge_msg(a, 0, \
+		"Expected no error. Error %d: %s", errno, strerror(errno));
 
 #ifdef __cplusplus
 extern "C" {
