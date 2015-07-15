@@ -184,7 +184,8 @@ Note: Aside from the basic assertions, each assertion has a `*_msg()` counterpar
 
 ### Errno assertion
 
-* `pt_errno(a, b)`: assert a == b, where a is some error return value and b is the expected value. The error message includes strerror(errno).
+* `pt_eno(a, b)`: assert a == b, where a is some error return value and b is the expected value. The error message includes strerror(errno).
+* `pt_noe(a)`: assert a != -1, where a is some error return value. The error message includes strerror(errno).
 
 ## Running Tests
 
