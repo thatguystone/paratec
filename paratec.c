@@ -268,6 +268,19 @@ static void _setup_signals(void)
 	}
 }
 
+static int _test_sort_cb(const void *a_, const void *b_)
+{
+	const struct test *a = a_;
+	const struct test *b = b_;
+
+	return strcmp(a->name, b->name);
+}
+
+static void _sort_tests(struct tests *ts)
+{
+	qsort(ts->all, ts->c, sizeof(*ts->all), _test_sort_cb);
+}
+
 static void _filter_tests(struct tests *ts)
 {
 	char *f;
@@ -1132,6 +1145,7 @@ int main(int argc, char **argv)
 	}
 
 	_set_opts(&ts, argc, argv);
+	_sort_tests(&ts);
 	_filter_tests(&ts);
 
 	for (i = 0; i < ts.c; i++) {
