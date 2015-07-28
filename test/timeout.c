@@ -1,5 +1,5 @@
 /**
- * @author Andrew Stone <andrew@clovar.com>
+ * @author Andrew Stone <a@stoney.io>
  * @copyright 2014 Andrew Stone
  *
  * This file is part of paratec and is released under the MIT License:
