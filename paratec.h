@@ -178,8 +178,8 @@
 	const void* __pt_b = (b); \
 	const size_t n = (len); \
 	pt_msg(0 op memcmp(__pt_a, __pt_b, n), msg, ##__VA_ARGS__); })
-#define pt_meq_msg(a, b, len, msg, ...) pt_mem(a, ==, b, len, msg, ##__VA_ARGS__)
-#define pt_mne_msg(a, b, len, msg, ...) pt_mem(a, !=, b, len, msg, ##__VA_ARGS__)
+#define pt_meq_msg(a, b, len, msg, ...) pt_mem_msg(a, ==, b, len, msg, ##__VA_ARGS__)
+#define pt_mne_msg(a, b, len, msg, ...) pt_mem_msg(a, !=, b, len, msg, ##__VA_ARGS__)
 
 /**
  * Binary assertions
