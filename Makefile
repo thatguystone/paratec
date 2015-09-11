@@ -147,7 +147,7 @@ asserts paratecv port simple wait_for: % : test/%
 	$(VG) ./$^ > /dev/null
 
 abort: % : test/%
-	$(VG) ./$^ | grep "Abort" | grep "after test start (test/abort.c" -q
+	$(VG) ./$^ | grep "Abort" | grep "after test/abort.c:14 (last test assert: test start)" -q
 
 bench: % : test/%
 	OUT=`$(VG) ./$^ -b`; \
@@ -183,8 +183,8 @@ nocapture: % : test/%
 nofork: % : test/%
 	$(VG) ./$^ --nofork | grep "test/nofork.c:37 : Expected" -q
 	$(VG) ./$^ --nofork | grep "test/nofork.c:43 : Expected" -q
-	$(VG) ./$^ --nofork | grep "test start (test/nofork.c:18)" -q
-	$(VG) ./$^ --nofork | grep "test/nofork.c:53 (test/nofork.c:18)" -q
+	$(VG) ./$^ --nofork | grep "test/nofork.c:18 (last test assert: test start)" -q
+	$(VG) ./$^ --nofork | grep "test/nofork.c:18 (last test assert: test/nofork.c:53)" -q
 
 nofork_fail: % : test/%
 	$(VG) ./$^ --nofork || [ $$? -eq 134 ]

@@ -780,9 +780,9 @@ static void _cleanup_job(struct tests *ts, struct job *j, struct test *t)
 
 	strncpy(t->fail_msg, j->fail_msg, sizeof(t->fail_msg));
 	if (*j->last_line != '\0') {
-		snprintf(t->last_line, sizeof(t->last_line), "%s (%s)",
-			j->last_fn_line,
-			j->last_line);
+		snprintf(t->last_line, sizeof(t->last_line), "%s (last test assert: %s)",
+			j->last_line,
+			j->last_fn_line);
 	} else {
 		strncpy(t->last_line, j->last_fn_line, sizeof(t->last_line));
 	}

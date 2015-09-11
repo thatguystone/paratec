@@ -243,20 +243,20 @@ A lot of information is output on failure. Let's take the output of the `nofork`
 
 ```
 FFFF..
-33%: 6 tests, 0 errors, 4 failures, 0 skipped. Ran in 0.015742s
-     FAIL : nofork_fail_outside (0.000229s) : test start (test/nofork.c:18) : here
-     FAIL : nofork_fail_outside_marked (0.000247s) : test/nofork.c:53 (test/nofork.c:18) : here
-     FAIL : nofork_mark (0.000216s) : test/nofork.c:43 : Expected `a` == `b`
-     FAIL : nofork_failure (0.000218s) : test/nofork.c:37 : Expected `a` == `b`
+33%: of 6 tests run, 2 OK, 0 errors, 4 failures, 0 skipped. Ran in 0.001670s
+     FAIL : nofork_fail_outside (0.000905s) : test/nofork.c:18 (last test assert: test start) : here
+     FAIL : nofork_fail_outside_marked (0.000813s) : test/nofork.c:18 (last test assert: test/nofork.c:53) : here
+     FAIL : nofork_failure (0.000735s) : test/nofork.c:37 : Expected `a` == `b`
+     FAIL : nofork_mark (0.000583s) : test/nofork.c:43 : Expected `a` == `b`
 ```
 
 The first line is a summary that prints while the test is running. It shows that 4 tests failed (`F`) and 2 passed (`.`).
 
 The next line gives a complete summary once all tests have finished, and it includes the total runtime.
 
-The next 4 lines highlight the failed tests, showing the test name, how long the test took to run, and where the test failed. `nofork_fail_outside` is a test where the assertion fails outside of the testing function; no assertions were ever hit inside the testing function. To note this, it outputs "test start" as the failure position in the test, and the in parenthesis gives the location of the failed assertion.
+The next 4 lines highlight the failed tests, showing the test name, how long the test took to run, and where the test failed. `nofork_fail_outside` is a test where the assertion fails outside of the testing function; no assertions were ever hit inside the testing function. To note this, it outputs the location of the failure, and the last run assertion in the test case in parenthesis (in this case, "test start").
 
-Like the first failure, the second one failed outside the test function, but in this case, the test function executed an assertion before calling the failing function. This is noted by the location of the last assertion in the test function and the location of the failed assertion in parenthesis.
+Like the first failure, the second one failed outside the test function, but in this case, the test function executed an assertion before calling the failing function. This is noted by the location of the failed assertion followed by the last assertion in the test function in parenthesis.
 
 The final two tests fail inside their testing functions, and they very simply output where the test failed.
 
