@@ -107,14 +107,14 @@ struct tests {
 	struct test *all;
 };
 
-static uint32_t _bench_duration;
+static double _bench_duration;
 static int _exit_fast;
 static char *_filter;
 static uint32_t _max_jobs;
 static int _nofork;
 static int _nocapture;
 static uint32_t _port;
-static uint32_t _timeout;
+static double _timeout;
 static int _verbose;
 
 // Only for use in testing processes
@@ -342,6 +342,20 @@ static uint32_t _parse_uint32(const char *opt, const char *from, uint32_t *to)
 	return 0;
 }
 
+static uint32_t _parse_double(const char *opt, const char *from, double *to)
+{
+	char *endptr;
+	double res = strtod(from, &endptr);
+
+	if (res == 0 || *endptr != '\0') {
+		fprintf(stderr, "Invalid value for %s: %s\n", opt, from);
+		return 1;
+	}
+
+	*to = res;
+	return 0;
+}
+
 static void _print_opt(const char *s, const char *arg, const char *desc)
 {
 	printf(INDENT "-%s, --%s\n", s, arg);
@@ -385,7 +399,7 @@ static void _set_opt(char **argv, struct tests *ts, const char c)
 		}
 
 		case 'd':
-			if (_parse_uint32("bench-dur", optarg, &_bench_duration)) {
+			if (_parse_double("bench-dur", optarg, &_bench_duration)) {
 				_print_usage(argv);
 			}
 			break;
@@ -428,7 +442,7 @@ static void _set_opt(char **argv, struct tests *ts, const char c)
 			break;
 
 		case 't':
-			if (_parse_uint32("timeout", optarg, &_timeout)) {
+			if (_parse_double("timeout", optarg, &_timeout)) {
 				_print_usage(argv);
 			}
 			break;
@@ -484,10 +498,10 @@ static void _set_opts(struct tests *ts, int argc, char **argv)
 		{ NULL, 0, NULL, 0 },
 	};
 
-	_bench_duration = 1;
+	_bench_duration = 1.0;
 	_max_jobs = _get_cpu_count() + 1;
 	_port = PORT;
-	_timeout = 5;
+	_timeout = 5.0;
 
 	_setenvopt(argv, ts, "PTBENCH", 'b');
 	_setenvopt(argv, ts, "PTBENCHDUR", 'd');
