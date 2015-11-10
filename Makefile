@@ -66,11 +66,9 @@ CXXFLAGS = \
 	$(CFLAGS_BASE) \
 	-std=gnu++11
 
-LDFLAGS = \
-	-Wl,-soname,$(SONAME)
-
 ifeq ($(OS),Linux)
 	LDFLAGS += \
+		-Wl,-soname,$(SONAME) \
 		-lrt
 endif
 
