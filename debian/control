@@ -21,6 +21,7 @@ Architecture: any
 Section: libdevel
 Depends:
 	${misc:Depends},
+	libparatec0 (=${binary:Version}),
 Description: Parallel Testing in C - development files
 	Paratec is a simple unit testing framework that stays out of your way
 	while making your life easier. Tests are always run in isolation from each
