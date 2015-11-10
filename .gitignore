@@ -1,4 +1,5 @@
 libparatec.a
+libparatec.o
 libparatec.pc
 libparatec.so
 test/*

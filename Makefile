@@ -1,3 +1,11 @@
+SOVERSION = 0
+NAME = libparatec
+A = $(NAME).a
+O = $(NAME).o
+SO = $(NAME).so
+SONAME = $(SO).$(SOVERSION)
+PC = libparatec.pc
+
 OS = $(shell uname -s)
 
 TESTS = \
@@ -58,9 +66,19 @@ CXXFLAGS = \
 	$(CFLAGS_BASE) \
 	-std=gnu++11
 
+LDFLAGS = \
+	-Wl,-soname,$(SONAME)
+
 ifeq ($(OS),Linux)
-	LDFLAGS = \
+	LDFLAGS += \
 		-lrt
+endif
+
+# The following flags only work with GNU's ld
+ifneq (,$(findstring GNU ld,$(shell ld -v 2>&1)))
+	LDFLAGS += \
+		-Wl,-z,now \
+		-Wl,-z,relro
 endif
 
 MEMCHECK = \
@@ -72,14 +90,14 @@ MEMCHECK = \
 		--num-callers=20 \
 		--track-origins=yes
 
-INSTALL = install -m 644
+INSTALL = install -D -m 644
 PREFIX ?= /usr
 DEST = $(DESTDIR)/usr
 INSTALL_INC_DIR = $(DEST)/include
 INSTALL_LIB_DIR = $(DEST)/lib
 INSTALL_PKGCFG_DIR = $(INSTALL_LIB_DIR)/pkgconfig
 
-all: libparatec.so libparatec.a libparatec.pc
+all: $(SO) $(A) $(PC)
 
 test: $(TESTS)
 	@echo "SUCCESS"
@@ -94,25 +112,24 @@ valgrind: VG = $(MEMCHECK)
 valgrind: test
 
 install: all
-	mkdir -p \
-		$(INSTALL_INC_DIR) \
-		$(INSTALL_LIB_DIR) \
-		$(INSTALL_PKGCFG_DIR)
-	$(INSTALL) paratec.h $(INSTALL_INC_DIR)
-	$(INSTALL) libparatec.so libparatec.a $(INSTALL_LIB_DIR)
-	$(INSTALL) libparatec.pc $(INSTALL_PKGCFG_DIR)
+	$(INSTALL) paratec.h -t $(INSTALL_INC_DIR)
+	$(INSTALL) $(A) -t $(INSTALL_LIB_DIR)
+	$(INSTALL) $(SO) $(INSTALL_LIB_DIR)/$(SONAME)
+	$(INSTALL) $(PC) -t $(INSTALL_PKGCFG_DIR)
+	ln -s -r $(INSTALL_LIB_DIR)/$(SONAME) $(INSTALL_LIB_DIR)/$(SO)
 
 uninstall:
 	rm -f $(INSTALL_INC_DIR)/paratec.h
-	rm -f $(INSTALL_LIB_DIR)/libparatec.{so,a}
-	rm -f $(INSTALL_PKGCFG_DIR)/libparatec.pc
+	rm -f $(INSTALL_LIB_DIR)/$(SO)
+	rm -f $(INSTALL_LIB_DIR)/$(SONAME)
+	rm -f $(INSTALL_LIB_DIR)/$(A)
+	rm -f $(INSTALL_PKGCFG_DIR)/$(PC)
 
 clean:
 	rm -f $(TESTS:%=test/%) test/cpp
 	rm -rf $(TESTS:%=test/%.dSYM)
 	rm -f test/paratec.o
-	rm -f libparatec.so libparatec.a
-	rm -f libparatec.pc
+	rm -f $(SO) $(A) $(O) $(PC)
 
 #
 # Rules for building
@@ -120,13 +137,16 @@ clean:
 # ==============================================================================
 #
 
-libparatec.so: paratec.c paratec.h
-	$(CC) -O2 -shared -fPIC $(CFLAGS) $< -o $@
+$(SO): paratec.c paratec.h
+	$(CC) -O2 -shared -fPIC $(CFLAGS) $< -o $@ $(LDFLAGS)
 
-libparatec.a: paratec.c paratec.h
+$(A): $(O)
+	ar -r $@ $^
+
+$(O): paratec.c paratec.h
 	$(CC) -c -O2 -fPIC $(CFLAGS) $< -o $@
 
-libparatec.pc: libparatec.pc.in
+$(PC): libparatec.pc.in
 	sed \
 		-e 's|{PREFIX}|$(PREFIX)|' \
 		$< > $@

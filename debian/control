@@ -1,0 +1,43 @@
+Source: paratec
+Maintainer: Andrew Stone <a@stoney.io>
+Section: devel
+Priority: optional
+Standards-Version: 3.9.6
+Build-Depends:
+	debhelper (>= 9),
+
+Package: libparatec0
+Architecture: any
+Depends:
+	${shlibs:Depends},
+	${misc:Depends},
+Description: Parallel Testing in C
+	Paratec is a simple unit testing framework that stays out of your way
+	while making your life easier. Tests are always run in isolation from each
+	other and in parallel, so everything is always fast and safe.
+
+Package: libparatec-dev
+Architecture: any
+Section: libdevel
+Depends:
+	${misc:Depends},
+Description: Parallel Testing in C - development files
+	Paratec is a simple unit testing framework that stays out of your way
+	while making your life easier. Tests are always run in isolation from each
+	other and in parallel, so everything is always fast and safe.
+	.
+	This package provides development files.
+
+Package: libparatec-dbg
+Section: debug
+Priority: extra
+Architecture: any
+Depends:
+	libparatec0 (=${binary:Version}),
+	${misc:Depends},
+Description: Parallel Testing in C - debug files
+	Paratec is a simple unit testing framework that stays out of your way
+	while making your life easier. Tests are always run in isolation from each
+	other and in parallel, so everything is always fast and safe.
+	.
+	This package provides debugging symbols.
