@@ -139,7 +139,7 @@ $(SO): paratec.c paratec.h
 	$(CC) -O2 -shared -fPIC $(CFLAGS) $< -o $@ $(LDFLAGS)
 
 $(A): $(O)
-	ar -r $@ $^
+	ar -r $@ $^ > /dev/null 2>&1
 
 $(O): paratec.c paratec.h
 	$(CC) -c -O2 -fPIC $(CFLAGS) $< -o $@
