@@ -92,7 +92,7 @@ INSTALL = install -D -m 644
 PREFIX ?= /usr
 DEST = $(DESTDIR)/usr
 INSTALL_INC_DIR = $(DEST)/include
-INSTALL_LIB_DIR = $(DEST)/lib
+INSTALL_LIB_DIR = $(DEST)/lib/$(DEB_HOST_MULTIARCH)
 INSTALL_PKGCFG_DIR = $(INSTALL_LIB_DIR)/pkgconfig
 
 all: $(SO) $(A) $(PC)
@@ -110,6 +110,11 @@ valgrind: VG = $(MEMCHECK)
 valgrind: test
 
 install: all
+	# Can remove this mkdir once trusty support is no longer necessary
+	mkdir -p \
+		$(INSTALL_INC_DIR) \
+		$(INSTALL_LIB_DIR) \
+		$(INSTALL_PKGCFG_DIR)
 	$(INSTALL) paratec.h -t $(INSTALL_INC_DIR)
 	$(INSTALL) $(A) -t $(INSTALL_LIB_DIR)
 	$(INSTALL) $(SO) $(INSTALL_LIB_DIR)/$(SONAME)

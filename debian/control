@@ -4,10 +4,12 @@ Section: devel
 Priority: optional
 Standards-Version: 3.9.6
 Build-Depends:
+	clang,
 	debhelper (>= 9),
 
 Package: libparatec0
 Architecture: any
+Multi-Arch: same
 Depends:
 	${shlibs:Depends},
 	${misc:Depends},
@@ -17,8 +19,9 @@ Description: Parallel Testing in C
 	other and in parallel, so everything is always fast and safe.
 
 Package: libparatec-dev
-Architecture: any
 Section: libdevel
+Architecture: any
+Multi-Arch: same
 Depends:
 	${misc:Depends},
 	libparatec0 (=${binary:Version}),
@@ -33,6 +36,7 @@ Package: libparatec-dbg
 Section: debug
 Priority: extra
 Architecture: any
+Multi-Arch: same
 Depends:
 	libparatec0 (=${binary:Version}),
 	${misc:Depends},
