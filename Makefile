@@ -110,7 +110,7 @@ valgrind: VG = $(MEMCHECK)
 valgrind: test
 
 format:
-	[ ! -f "`which clang-format`" ] && true || \
+	@[ ! -f "`which clang-format`" ] && true || \
 		clang-format -i \
 			*.c *.h \
 			test/*.c test/*.cpp
@@ -160,10 +160,10 @@ $(PC): libparatec.pc.in
 		-e 's|{PREFIX}|$(PREFIX)|' \
 		$< > $@
 
-test/paratec.o: paratec.c paratec.h
+test/paratec.o: paratec.c paratec.h | format
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-test/%: test/%.c test/paratec.o
+test/%: test/%.c test/paratec.o | format
 	$(CC) $(CFLAGS) test/$*.c paratec.c -o test/$* $(LDFLAGS)
 
 #
@@ -171,8 +171,6 @@ test/%: test/%.c test/paratec.o
 #
 # ==============================================================================
 #
-
-$(TESTS): |format
 
 asserts paratecv port simple wait_for: % : test/%
 	$(VG) ./$^ > /dev/null
