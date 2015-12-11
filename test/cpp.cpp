@@ -15,7 +15,8 @@ static void _cleanup(void)
 }
 
 PARATEC(cleanup_test, PTCLEANUP(_cleanup))
-{}
+{
+}
 
 static void _cleanupi(void)
 {
@@ -23,4 +24,5 @@ static void _cleanupi(void)
 }
 
 PARATEC(cleanup_testi, PTCLEANUP(_cleanupi), PTI(0, 16))
-{}
+{
+}

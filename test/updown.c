@@ -21,5 +21,4 @@ static void _down(void)
 
 PARATEC(basic, PTUP(_up), PTDOWN(_down))
 {
-
 }

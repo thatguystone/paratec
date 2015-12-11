@@ -23,7 +23,8 @@ PARATEC(bench2, PTBENCH())
 {
 	uint64_t i;
 
-	for (i = 0; i < _N; i++) {}
+	for (i = 0; i < _N; i++) {
+	}
 }
 
 PARATEC(bench_fail, PTBENCH())

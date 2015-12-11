@@ -26,7 +26,7 @@
 #include <unistd.h>
 #include "paratec.h"
 #ifdef PT_DARWIN
-	#include <mach/mach_time.h>
+#include <mach/mach_time.h>
 #endif
 
 #define MAX_BENCH_ITERS 1000000000
@@ -87,11 +87,11 @@ struct test {
 	struct bench bench;
 	struct paratec *p;
 	struct {
-		int run:1;
-		int filtered_run:1;
-		int passed:1;
-		int timed_out:1;
-		int is_ranged:1;
+		int run : 1;
+		int filtered_run : 1;
+		int passed : 1;
+		int timed_out : 1;
+		int is_ranged : 1;
 	} flags;
 };
 
@@ -155,7 +155,6 @@ static int64_t _nnow(void)
 		exit(1);
 	}
 
-
 #elif defined(PT_DARWIN)
 
 	// I'm just lazy: http://stackoverflow.com/a/5167506
@@ -178,7 +177,6 @@ static int64_t _nnow(void)
 #endif
 
 	return (((int64_t)t.tv_sec) * (1000 * 1000 * 1000)) + t.tv_nsec;
-
 }
 
 static int64_t _unow(void)
@@ -206,8 +204,7 @@ static void _signal_wait(void)
 	sigset_t mask;
 	siginfo_t info;
 	struct timespec timeout = {
-		.tv_sec = 0,
-		.tv_nsec = SLEEP_TIME,
+		.tv_sec = 0, .tv_nsec = SLEEP_TIME,
 	};
 
 	sigemptyset(&mask);
@@ -251,20 +248,19 @@ static void _setup_signals(void)
 
 #ifdef PT_LINUX
 
-	int err;
-	sigset_t mask;
+		int err;
+		sigset_t mask;
 
-	sigemptyset(&mask);
-	sigaddset(&mask, SIGCHLD);
+		sigemptyset(&mask);
+		sigaddset(&mask, SIGCHLD);
 
-	err = sigprocmask(SIG_BLOCK, &mask, NULL);
-	if (err < 0) {
-		perror("failed to change signal mask");
-		exit(1);
-	}
+		err = sigprocmask(SIG_BLOCK, &mask, NULL);
+		if (err < 0) {
+			perror("failed to change signal mask");
+			exit(1);
+		}
 
 #endif
-
 	}
 }
 
@@ -367,16 +363,24 @@ static void _print_usage(char **argv)
 	printf("Usage: %s [OPTION]...\n", argv[0]);
 	printf("\n");
 	_print_opt("b", "bench", "run benchmarks");
-	_print_opt("d 1", "bench-dur=1", "maximum time to run each benchmark for, in seconds (default=1)");
-	_print_opt("e", "exit-fast", "after a test has finished, exit without calling any atexit() or on_exit() functions");
-	_print_opt("f FILTER", "filter=FILTER,...", "only run tests prefixed with FILTER, may be given multiple times");
+	_print_opt(
+		"d 1", "bench-dur=1",
+		"maximum time to run each benchmark for, in seconds (default=1)");
+	_print_opt("e", "exit-fast", "after a test has finished, exit without "
+								 "calling any atexit() or on_exit() functions");
+	_print_opt(
+		"f FILTER", "filter=FILTER,...",
+		"only run tests prefixed with FILTER, may be given multiple times");
 	_print_opt("h", "help", "print this messave");
 	_print_opt("j #CPU+1", "jobs=#CPU+1", "number of tests to run in parallel");
 	_print_opt("n", "nocapture", "don't capture stdout/stderr");
-	_print_opt("p " PTSTR(PORT), "port=" PTSTR(PORT), "port number to start handing out ports at");
-	_print_opt("s", "nofork", "run every test in a single process without isolation, buffering, or anything else");
+	_print_opt("p " PTSTR(PORT), "port=" PTSTR(PORT),
+			   "port number to start handing out ports at");
+	_print_opt("s", "nofork", "run every test in a single process without "
+							  "isolation, buffering, or anything else");
 	_print_opt("t", "timeout", "set the global timeout for tests, in seconds");
-	_print_opt("v", "verbose", "be more verbose with the test summary; pass multiple times to increase verbosity");
+	_print_opt("v", "verbose", "be more verbose with the test summary; pass "
+							   "multiple times to increase verbosity");
 
 	exit(2);
 }
@@ -384,92 +388,88 @@ static void _print_usage(char **argv)
 static void _set_opt(char **argv, struct tests *ts, const char c)
 {
 	switch (c) {
-		case 0:
-			break;
+	case 0:
+		break;
 
-		case 'b': {
-			uint32_t i;
+	case 'b': {
+		uint32_t i;
 
-			for (i = 0; i < ts->c; i++) {
-				struct test *t = ts->all + i;
-				t->flags.run |= t->p->bench;
-			}
-
-			break;
+		for (i = 0; i < ts->c; i++) {
+			struct test *t = ts->all + i;
+			t->flags.run |= t->p->bench;
 		}
 
-		case 'd':
-			if (_parse_double("bench-dur", optarg, &_bench_duration)) {
-				_print_usage(argv);
-			}
-			break;
+		break;
+	}
 
-		case 'e':
-			_exit_fast = 1;
-			break;
-
-		case 'f': {
-			int err;
-			char *old_filter = _filter;
-
-			err = asprintf(&_filter, "%s,%s", old_filter ?: "", optarg);
-			if (err < 0) {
-				perror("failed to create filter string");
-				exit(1);
-			}
-
-			free(old_filter);
-			break;
-		}
-
-		case 'j':
-			if (_parse_uint32("jobs", optarg, &_max_jobs)) {
-				_print_usage(argv);
-			}
-			break;
-
-		case 'n':
-			_nocapture = 1;
-			break;
-
-		case 'p':
-			if (_parse_uint32("port", optarg, &_port) ||
-				_port == 0 ||
-				_port > UINT16_MAX) {
-
-				_print_usage(argv);
-			}
-			break;
-
-		case 't':
-			if (_parse_double("timeout", optarg, &_timeout)) {
-				_print_usage(argv);
-			}
-			break;
-
-		case 'v':
-			if (optarg == NULL) {
-				_verbose++;
-			} else {
-				_verbose += strlen(optarg) + 1;
-			}
-			break;
-
-		case 's':
-			_nofork = 1;
-			break;
-
-		case 'h':
-		default:
+	case 'd':
+		if (_parse_double("bench-dur", optarg, &_bench_duration)) {
 			_print_usage(argv);
+		}
+		break;
+
+	case 'e':
+		_exit_fast = 1;
+		break;
+
+	case 'f': {
+		int err;
+		char *old_filter = _filter;
+
+		err = asprintf(&_filter, "%s,%s", old_filter ?: "", optarg);
+		if (err < 0) {
+			perror("failed to create filter string");
+			exit(1);
+		}
+
+		free(old_filter);
+		break;
+	}
+
+	case 'j':
+		if (_parse_uint32("jobs", optarg, &_max_jobs)) {
+			_print_usage(argv);
+		}
+		break;
+
+	case 'n':
+		_nocapture = 1;
+		break;
+
+	case 'p':
+		if (_parse_uint32("port", optarg, &_port) || _port == 0
+			|| _port > UINT16_MAX) {
+
+			_print_usage(argv);
+		}
+		break;
+
+	case 't':
+		if (_parse_double("timeout", optarg, &_timeout)) {
+			_print_usage(argv);
+		}
+		break;
+
+	case 'v':
+		if (optarg == NULL) {
+			_verbose++;
+		} else {
+			_verbose += strlen(optarg) + 1;
+		}
+		break;
+
+	case 's':
+		_nofork = 1;
+		break;
+
+	case 'h':
+	default:
+		_print_usage(argv);
 	}
 }
 
-static void _setenvopt(
-	char **argv,
-	struct tests *ts,
-	const char *name,
-	const char c)
+static void
+_setenvopt(char **argv, struct tests *ts, const char *name, const char c)
 {
 	char *v = getenv(name);
 	if (v == NULL) {
@@ -564,9 +564,7 @@ static void _add_test(struct tests *ts, struct paratec *p)
 		}
 
 		t.i = i;
-		t.titem = p->vec == NULL ?
-			NULL :
-			((char*)p->vec) + (i * p->vecisize);
+		t.titem = p->vec == NULL ? NULL : ((char *)p->vec) + (i * p->vecisize);
 		snprintf(t.name, sizeof(t.name), "%s%s", p->name, idx);
 
 		ts->all[ts->c++] = t;
@@ -780,9 +778,8 @@ static void _cleanup_job(struct tests *ts, struct job *j, struct test *t)
 
 	strncpy(t->fail_msg, j->fail_msg, sizeof(t->fail_msg));
 	if (*j->last_line != '\0') {
-		snprintf(t->last_line, sizeof(t->last_line), "%s (last test assert: %s)",
-			j->last_line,
-			j->last_fn_line);
+		snprintf(t->last_line, sizeof(t->last_line),
+				 "%s (last test assert: %s)", j->last_line, j->last_fn_line);
 	} else {
 		strncpy(t->last_line, j->last_fn_line, sizeof(t->last_line));
 	}
@@ -793,10 +790,8 @@ static void _cleanup_job(struct tests *ts, struct job *j, struct test *t)
 	}
 
 	if (t->flags.is_ranged && *j->iter_name != '\0') {
-		snprintf(t->name, sizeof(t->name), "%s:%" PRId64 ":%s",
-			t->p->name,
-			t->i,
-			j->iter_name);
+		snprintf(t->name, sizeof(t->name), "%s:%" PRId64 ":%s", t->p->name,
+				 t->i, j->iter_name);
 	}
 
 	if (j->skipped) {
@@ -833,9 +828,8 @@ static void _run_fork_test(struct test *t, struct job *j)
 
 	pid = fork();
 	if (pid == -1) {
-		fprintf(stderr, "failed to fork for test %s: %s\n",
-			t->p->name,
-			strerror(errno));
+		fprintf(stderr, "failed to fork for test %s: %s\n", t->p->name,
+				strerror(errno));
 		exit(1);
 	}
 
@@ -916,10 +910,8 @@ static void _run_fork_tests(struct tests *ts)
 		}
 	}
 
-	jobsmm = mmap(
-		NULL, sizeof(jobs),
-		PROT_READ | PROT_WRITE,
-		MAP_ANON | MAP_SHARED, -1, 0);
+	jobsmm = mmap(NULL, sizeof(jobs), PROT_READ | PROT_WRITE,
+				  MAP_ANON | MAP_SHARED, -1, 0);
 	if (jobsmm == MAP_FAILED) {
 		perror("could not map shared testing memory");
 		exit(1);
@@ -967,7 +959,8 @@ static void _run_fork_tests(struct tests *ts)
 			}
 
 			if (t == NULL) {
-				fprintf(stderr,
+				fprintf(
+					stderr,
 					"child exited (pid=%d), but test case can't be found?\n",
 					pid);
 				exit(1);
@@ -985,7 +978,8 @@ static void _run_fork_tests(struct tests *ts)
 
 			if (j->skipped) {
 				summary_char = 'S';
-			} else if (t->flags.passed || (!t->flags.passed && t->p->expect_fail)) {
+			} else if (t->flags.passed
+					   || (!t->flags.passed && t->p->expect_fail)) {
 				t->flags.passed = 1;
 				ts->passes++;
 				summary_char = '.';
@@ -1138,10 +1132,10 @@ int main(int argc, char **argv)
 
 #elif defined(PT_DARWIN)
 
-	extern struct paratec *__start_paratec
-		__asm("section$start$__DATA$" PT_SECTION_NAME);
-	extern struct paratec *__stop_paratec
-		__asm("section$end$__DATA$" PT_SECTION_NAME);
+	extern struct paratec *__start_paratec __asm(
+		"section$start$__DATA$" PT_SECTION_NAME);
+	extern struct paratec *__stop_paratec __asm(
+		"section$end$__DATA$" PT_SECTION_NAME);
 
 #endif
 
@@ -1177,16 +1171,12 @@ int main(int argc, char **argv)
 	start = _unow();
 	_run_tests(&ts);
 
-	printf("%d%%: of %" PRIu32 " tests run, %" PRIu32 " OK, %" PRIu32 " errors, %" PRIu32 " failures, %" PRIu32 " skipped. Ran in %fs\n",
-		ts.enabled == 0 ?
-			100 :
-			(int)((((double)ts.passes) / ts.enabled) * 100),
-		ts.enabled,
-		ts.enabled - (ts.errors + ts.failures),
-		ts.errors,
-		ts.failures,
-		ts.c - ts.enabled,
-		RUNTIME(start));
+	printf("%d%%: of %" PRIu32 " tests run, %" PRIu32 " OK, %" PRIu32
+		   " errors, %" PRIu32 " failures, %" PRIu32 " skipped. Ran in %fs\n",
+		   ts.enabled == 0 ? 100
+						   : (int)((((double)ts.passes) / ts.enabled) * 100),
+		   ts.enabled, ts.enabled - (ts.errors + ts.failures), ts.errors,
+		   ts.failures, ts.c - ts.enabled, RUNTIME(start));
 
 	for (i = 0; i < ts.c; i++) {
 		int dump = 1;
@@ -1198,49 +1188,37 @@ int main(int argc, char **argv)
 
 			if (_verbose >= 2) {
 				dump = 1;
-				printf(INDENT " SKIP : %s \n",
-					t->name);
+				printf(INDENT " SKIP : %s \n", t->name);
 			}
 		} else if (t->flags.passed) {
 			if (t->p->bench) {
 				dump = 1;
-				printf(INDENT "BENCH : %s (%'" PRIu64 " @ %'" PRIu64 " ns/op)\n",
-					t->name,
-					t->bench.iters,
-					t->bench.ns_op);
+				printf(INDENT "BENCH : %s (%'" PRIu64 " @ %'" PRIu64
+							  " ns/op)\n",
+					   t->name, t->bench.iters, t->bench.ns_op);
 			} else {
 				if (_verbose) {
-					printf(INDENT " PASS : %s (%fs)\n",
-						t->name,
-						t->duration);
+					printf(INDENT " PASS : %s (%fs)\n", t->name, t->duration);
 				}
 				dump &= _verbose >= 3;
 			}
 		} else if (t->exit_status == FAIL_EXIT_STATUS) {
-			printf(INDENT " FAIL : %s (%fs) : %s : %s\n",
-				t->name,
-				t->duration,
-				t->last_line,
-				t->fail_msg);
+			printf(INDENT " FAIL : %s (%fs) : %s : %s\n", t->name, t->duration,
+				   t->last_line, t->fail_msg);
 		} else if (t->exit_status != t->p->exit_status) {
-			printf(INDENT " FAIL : %s (%fs) : after %s : expected exit code=%d, got=%d\n",
-				t->name,
-				t->duration,
-				t->last_line,
-				t->p->exit_status,
+			printf(
+				INDENT
+				" FAIL : %s (%fs) : after %s : expected exit code=%d, got=%d\n",
+				t->name, t->duration, t->last_line, t->p->exit_status,
 				t->exit_status);
 		} else if (t->flags.timed_out) {
-			printf(INDENT "ERROR : %s (%fs) : after %s : timed out\n",
-				t->name,
-				t->duration,
-				t->last_line);
+			printf(INDENT "ERROR : %s (%fs) : after %s : timed out\n", t->name,
+				   t->duration, t->last_line);
 		} else if (t->signal_num != 0) {
-			printf(INDENT "ERROR : %s (%fs) : after %s : received signal(%d) `%s`\n",
-				t->name,
-				t->duration,
-				t->last_line,
-				t->signal_num,
-				strsignal(t->signal_num));
+			printf(INDENT
+				   "ERROR : %s (%fs) : after %s : received signal(%d) `%s`\n",
+				   t->name, t->duration, t->last_line, t->signal_num,
+				   strsignal(t->signal_num));
 		}
 
 		dumped = _clear_buff(dump, "stdout", &t->stdout);
@@ -1268,14 +1246,12 @@ uint16_t pt_get_port(uint8_t i)
 	return _port + _tjob->id + (i * _max_jobs);
 }
 
-const char* pt_get_name()
+const char *pt_get_name()
 {
 	return _tjob->test_name;
 }
 
-void pt_set_iter_name(
-	const char *format,
-	...)
+void pt_set_iter_name(const char *format, ...)
 {
 	va_list args;
 	va_start(args, format);
@@ -1283,9 +1259,7 @@ void pt_set_iter_name(
 	va_end(args);
 }
 
-void _pt_fail(
-	const char *format,
-	...)
+void _pt_fail(const char *format, ...)
 {
 	va_list args;
 	va_start(args, format);
@@ -1308,8 +1282,7 @@ void _pt_fail(
 				"************************************************************\n"
 				"\n"
 				"%s : %s\n",
-				_tjob->last_line,
-				_tjob->fail_msg);
+				_tjob->last_line, _tjob->fail_msg);
 
 			fflush(stdout);
 			abort();
@@ -1319,15 +1292,14 @@ void _pt_fail(
 	_exit_test(FAIL_EXIT_STATUS);
 }
 
-void _pt_mark(
-	const char *file,
-	const char *func,
-	const size_t line)
+void _pt_mark(const char *file, const char *func, const size_t line)
 {
 	if (strcmp(_tjob->fn_name, func) == 0) {
 		*_tjob->last_line = '\0';
-		snprintf(_tjob->last_fn_line, sizeof(_tjob->last_fn_line), "%s:%zu", file, line);
+		snprintf(_tjob->last_fn_line, sizeof(_tjob->last_fn_line), "%s:%zu",
+				 file, line);
 	} else {
-		snprintf(_tjob->last_line, sizeof(_tjob->last_line), "%s:%zu", file, line);
+		snprintf(_tjob->last_line, sizeof(_tjob->last_line), "%s:%zu", file,
+				 line);
 	}
 }

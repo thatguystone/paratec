@@ -12,7 +12,6 @@
 
 PARATEC(basic)
 {
-
 }
 
 PARATEC(exit, PTEXIT(1))

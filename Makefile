@@ -109,6 +109,9 @@ test-all:
 valgrind: VG = $(MEMCHECK)
 valgrind: test
 
+format:
+	clang-format -i *.c *.h test/*.c test/*.cpp
+
 install: all
 	# Can remove this mkdir once trusty support is no longer necessary
 	mkdir -p \
@@ -140,13 +143,13 @@ clean:
 # ==============================================================================
 #
 
-$(SO): paratec.c paratec.h
+$(SO): paratec.c paratec.h | format
 	$(CC) -O2 -shared -fPIC $(CFLAGS) $< -o $@ $(LDFLAGS)
 
 $(A): $(O)
 	ar -r $@ $^ > /dev/null 2>&1
 
-$(O): paratec.c paratec.h
+$(O): paratec.c paratec.h | format
 	$(CC) -c -O2 -fPIC $(CFLAGS) $< -o $@
 
 $(PC): libparatec.pc.in
@@ -165,6 +168,8 @@ test/%: test/%.c test/paratec.o
 #
 # ==============================================================================
 #
+
+$(TESTS): |format
 
 asserts paratecv port simple wait_for: % : test/%
 	$(VG) ./$^ > /dev/null
