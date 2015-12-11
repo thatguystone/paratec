@@ -64,7 +64,7 @@ CFLAGS = \
 
 CXXFLAGS = \
 	$(CFLAGS_BASE) \
-	-std=gnu++11
+	-std=gnu++0x
 
 ifeq ($(OS),Linux)
 	LDFLAGS += \
@@ -110,7 +110,10 @@ valgrind: VG = $(MEMCHECK)
 valgrind: test
 
 format:
-	clang-format -i *.c *.h test/*.c test/*.cpp
+	[ ! -f "`which clang-format`" ] && true || \
+		clang-format -i \
+			*.c *.h \
+			test/*.c test/*.cpp
 
 install: all
 	# Can remove this mkdir once trusty support is no longer necessary
