@@ -33,17 +33,20 @@
 #error Unsupported platform
 #endif
 
+#define __PT_TEST(test_fn) __paratec_fn_##test_fn
+#define __PT_STRUCT(test_fn) __paratec_obj_##test_fn
+#define __PT_PTR(test_fn) __paratec_sobj_##test_fn
+
 #define __PARATEC(test_fn, ...)                                                \
-	static struct paratec __paratec_##test_fn##_obj;                           \
-	static struct paratec *__paratec_##test_fn                                 \
-		__attribute__((used, section(PT_SECTION)))                             \
-		= &__paratec_##test_fn##_obj;                                          \
+	static struct paratec __PT_STRUCT(test_fn);                                \
+	static struct paratec *__PT_PTR(test_fn)                                   \
+		__attribute__((used, section(PT_SECTION))) = &__PT_STRUCT(test_fn);    \
 	static __attribute__((constructor)) void __paratec_##test_fn##_ctor(void)  \
 	{                                                                          \
-		struct paratec *p = __paratec_##test_fn;                               \
-		p->fn_name = PTSTR(__paratec_test_##test_fn);                          \
+		struct paratec *p = __PT_PTR(test_fn);                                 \
+		p->fn_name = PTSTR(__PT_TEST(test_fn));                                \
 		p->name = PTSTR(test_fn);                                              \
-		p->fn = (void (*)(int64_t, uint32_t, void *))__paratec_test_##test_fn; \
+		p->fn = (void (*)(int64_t, uint32_t, void *))__PT_TEST(test_fn);       \
 		__VA_ARGS__;                                                           \
 	};
 
@@ -51,24 +54,23 @@
  * Run a unit test.
  */
 #define PARATEC(test_fn, ...)                                                  \
-	static void __paratec_test_##test_fn(int64_t, uint32_t, void *);           \
+	static void __PT_TEST(test_fn)(int64_t, uint32_t, void *);                 \
 	__PARATEC(test_fn, __VA_ARGS__)                                            \
-	static void __paratec_test_##test_fn(int64_t _i __attribute__((unused)),   \
-										 uint32_t _N __attribute__((unused)),  \
-										 void *_t __attribute__((unused)))
+	static void __PT_TEST(test_fn)(int64_t _i __attribute__((unused)),         \
+								   uint32_t _N __attribute__((unused)),        \
+								   void *_t __attribute__((unused)))
 
 /**
  * Run a test for each item in `vec`.
  */
 #define PARATECV(test_fn, tvec, ...)                                           \
-	static void __paratec_test_##test_fn(int64_t, uint32_t,                    \
-										 typeof(tvec[0]) *);                   \
+	static void __PT_TEST(test_fn)(int64_t, uint32_t, typeof(tvec[0]) *);      \
 	__PARATEC(test_fn, PTI(0, (sizeof(tvec) / sizeof((tvec)[0]))),             \
 			  p->vec = tvec, p->vecisize = sizeof((tvec)[0]), ##__VA_ARGS__)   \
-	static void __paratec_test_##test_fn(int64_t _i __attribute__((unused)),   \
-										 uint32_t _N __attribute__((unused)),  \
-										 typeof(tvec[0]) *_t                   \
-										 __attribute__((unused)))
+	static void __PT_TEST(test_fn)(int64_t _i __attribute__((unused)),         \
+								   uint32_t _N __attribute__((unused)),        \
+								   typeof(tvec[0]) *_t                         \
+								   __attribute__((unused)))
 
 /**
  * Run a unit test, expecting the given exit status.
