@@ -34,14 +34,18 @@
 #endif
 
 #define __PARATEC(test_fn, ...)                                                \
-	static struct paratec __paratec_##test_fn##_obj                            \
-		= {.fn_name = PTSTR(__paratec_test_##test_fn),                         \
-		   .name = PTSTR(test_fn),                                             \
-		   .fn                                                                 \
-		   = (void (*)(int64_t, uint32_t, void *))__paratec_test_##test_fn,    \
-		   __VA_ARGS__ };                                                      \
+	static struct paratec __paratec_##test_fn##_obj;                           \
 	static struct paratec *__paratec_##test_fn                                 \
-		__attribute((used, section(PT_SECTION))) = &__paratec_##test_fn##_obj;
+		__attribute__((used, section(PT_SECTION)))                             \
+		= &__paratec_##test_fn##_obj;                                          \
+	static __attribute__((constructor)) void __paratec_##test_fn##_ctor(void)  \
+	{                                                                          \
+		struct paratec *p = __paratec_##test_fn;                               \
+		p->fn_name = PTSTR(__paratec_test_##test_fn);                          \
+		p->name = PTSTR(test_fn);                                              \
+		p->fn = (void (*)(int64_t, uint32_t, void *))__paratec_test_##test_fn; \
+		__VA_ARGS__;                                                           \
+	};
 
 /**
  * Run a unit test.
@@ -49,10 +53,9 @@
 #define PARATEC(test_fn, ...)                                                  \
 	static void __paratec_test_##test_fn(int64_t, uint32_t, void *);           \
 	__PARATEC(test_fn, __VA_ARGS__)                                            \
-	static void __paratec_test_##test_fn(int64_t _i __attribute((__unused__)), \
-										 uint32_t _N                           \
-										 __attribute((__unused__)),            \
-										 void *_t __attribute((__unused__)))
+	static void __paratec_test_##test_fn(int64_t _i __attribute__((unused)),   \
+										 uint32_t _N __attribute__((unused)),  \
+										 void *_t __attribute__((unused)))
 
 /**
  * Run a test for each item in `vec`.
@@ -61,41 +64,41 @@
 	static void __paratec_test_##test_fn(int64_t, uint32_t,                    \
 										 typeof(tvec[0]) *);                   \
 	__PARATEC(test_fn, PTI(0, (sizeof(tvec) / sizeof((tvec)[0]))),             \
-			  .vec = tvec, .vecisize = sizeof((tvec)[0]), __VA_ARGS__)         \
-	static void __paratec_test_##test_fn(                                      \
-		int64_t _i __attribute((__unused__)),                                  \
-		uint32_t _N __attribute((__unused__)),                                 \
-		typeof(tvec[0]) *_t __attribute((__unused__)))
+			  p->vec = tvec, p->vecisize = sizeof((tvec)[0]), ##__VA_ARGS__)   \
+	static void __paratec_test_##test_fn(int64_t _i __attribute__((unused)),   \
+										 uint32_t _N __attribute__((unused)),  \
+										 typeof(tvec[0]) *_t                   \
+										 __attribute__((unused)))
 
 /**
  * Run a unit test, expecting the given exit status.
  */
-#define PTEXIT(s) .exit_status = s
+#define PTEXIT(s) p->exit_status = s
 
 /**
  * Run a unit test, expecting the given signal.
  */
-#define PTSIG(s) .signal_num = s
+#define PTSIG(s) p->signal_num = s
 
 /**
  * Expect this test to fail. Kinda weird to use, but no judgment.
  */
-#define PTFAIL() .expect_fail = 1
+#define PTFAIL() p->expect_fail = 1
 
 /**
  * Run a unit test with a specific timeout (in seconds as a double).
  */
-#define PTTIME(s) .timeout = s
+#define PTTIME(s) p->timeout = s
 
 /**
  * Add a setup function to the test that runs in the isolated environment.
  */
-#define PTUP(fn) .setup = fn
+#define PTUP(fn) p->setup = fn
 
 /**
  * Add a teardown function to the test that runs in the isolated environment.
  */
-#define PTDOWN(fn) .teardown = fn
+#define PTDOWN(fn) p->teardown = fn
 
 /**
  * Cleanup after a test, outside of the testing environment. Even if a test
@@ -103,18 +106,18 @@
  * it's only a cleanup function an not part of your test; running any assertions
  * will result in undefined behavior.
  */
-#define PTCLEANUP(fn) .cleanup = fn
+#define PTCLEANUP(fn) p->cleanup = fn
 
 /**
  * Run a test multiple times, over the given range.
  * Does: for (i = a; i < b; i++);
  */
-#define PTI(a, b) .range_low = a, .range_high = b
+#define PTI(a, b) p->range_low = a, p->range_high = b
 
 /**
  * This test is a benchmark
  */
-#define PTBENCH() .bench = 1
+#define PTBENCH() p->bench = 1
 
 /**
  * Mark that the test hit this line

@@ -26,3 +26,14 @@ static void _cleanupi(void)
 PARATEC(cleanup_testi, PTCLEANUP(_cleanupi), PTI(0, 16))
 {
 }
+
+static int _v[] = {
+	1,
+	2,
+	3,
+	4,
+};
+
+PARATECV(testv, _v)
+{
+}

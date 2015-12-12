@@ -14,6 +14,7 @@ TESTS = \
 	bench \
 	capture \
 	cleanup \
+	cpp \
 	errno \
 	exit_status \
 	filter \
@@ -29,11 +30,6 @@ TESTS = \
 	timeout \
 	updown \
 	wait_for
-
-ifneq (,$(findstring clang++,$(CXX)))
-	TESTS := $(TESTS) \
-		cpp
-endif
 
 CFLAGS_BASE = \
 	-g \
