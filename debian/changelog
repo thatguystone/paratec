@@ -1,3 +1,9 @@
+paratec (1.0.1) stable; urgency=medium
+
+  * Support g++
+
+ -- Andrew Stone <a@stoney.io>  Fri, 11 Dec 2015 20:27:33 -0500
+
 paratec (1.0.0) stable; urgency=medium
 
   * Initial release.
