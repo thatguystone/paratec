@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/file.h>
 #include <sys/mman.h>
 #include <sys/time.h>
 #include <sys/wait.h>
@@ -128,6 +129,9 @@ static uint32_t _jobsc;
 // When not forking, protect the longjmp!
 static pthread_t _pthself;
 
+// Used for flock stuff. See _protect_llvm().
+static int _self_fd = -1;
+
 #ifdef PT_LINUX
 static sigset_t _mask;
 #endif
@@ -141,6 +145,12 @@ static __attribute((noreturn)) void _exit_test(int status)
 	if (_exit_fast) {
 		_exit(status);
 	} else {
+		// Coverage is written from an atexit() handler, so lock before
+		// calling exit to ensure that coverage can proceed safely.
+		if (_self_fd != -1) {
+			flock(_self_fd, LOCK_EX);
+		}
+
 		exit(status);
 	}
 }
@@ -259,6 +269,39 @@ static void _setup_signals(void)
 	}
 
 #endif
+}
+
+/**
+ * LLVM's cov is not fork-safe. So if forking and running with llvm cov, then
+ * need to make sure that only 1 process is writing coverage data at a time:
+ * flock is magic for this. With flock, the lock is released when the process
+ * exits (awesome), and it serves as a lock (awesome).
+ *
+ * This bug also was creating problems with _jobs/jobsmm: something in LLVM's
+ * coverage was overwriting parts of the first entry, causing paratec to crash
+ * when it tried to clean up the now-corrupted process.
+ *
+ * @see https://llvm.org/bugs/show_bug.cgi?id=20986
+ */
+static void _protect_llvm(const char *self)
+{
+
+#ifdef PT_LINUX
+	// Of course: this only works on Linux.
+	//
+	// Only protect if coverage is enabled. No need to check for forking: non-
+	// forking tests exit with a longjmp.
+	extern void llvm_gcov_init(void)__attribute__((weak));
+	if (llvm_gcov_init == NULL) {
+		return;
+	}
+#endif
+
+	_self_fd = open(self, O_RDONLY);
+	if (_self_fd == -1) {
+		perror("failed to open self for reading");
+		exit(1);
+	}
 }
 
 static int _test_sort_cb(const void *a_, const void *b_)
@@ -1142,6 +1185,7 @@ int main(int argc, char **argv)
 	memset(&ts, 0, sizeof(ts));
 	_pthself = pthread_self();
 	_setup_signals();
+	_protect_llvm(argv[0]);
 
 	sp = &__start_paratec;
 	while (sp < &__stop_paratec) {
