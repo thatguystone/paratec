@@ -59,8 +59,7 @@ CFLAGS = \
 	-std=gnu99
 
 CXXFLAGS = \
-	$(CFLAGS_BASE) \
-	-std=gnu++11
+	$(CFLAGS_BASE)
 
 ifeq ($(OS),Linux)
 	LDFLAGS += \
