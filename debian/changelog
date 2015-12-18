@@ -1,3 +1,9 @@
+paratec (1.0.2) stable; urgency=medium
+
+  * Work around crashes with LLVM coverage
+
+ -- Andrew Stone <a@stoney.io>  Fri, 18 Dec 2015 18:24:54 -0500
+
 paratec (1.0.1) stable; urgency=medium
 
   * Support g++
