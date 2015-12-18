@@ -60,7 +60,7 @@ CFLAGS = \
 
 CXXFLAGS = \
 	$(CFLAGS_BASE) \
-	-std=gnu++0x
+	-std=gnu++11
 
 ifeq ($(OS),Linux)
 	LDFLAGS += \
