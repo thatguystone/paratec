@@ -613,7 +613,7 @@ static void _flush_pipes(struct tests *ts, struct job *jobs, uint32_t jobsc)
 		}
 
 		_flush_pipe(j->stdout, &ts->all[j->i].stdout);
-		_flush_pipe(j->stderr, &ts->all[j->i].stdout);
+		_flush_pipe(j->stderr, &ts->all[j->i].stderr);
 	}
 }
 
