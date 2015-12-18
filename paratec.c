@@ -128,6 +128,10 @@ static uint32_t _jobsc;
 // When not forking, protect the longjmp!
 static pthread_t _pthself;
 
+#ifdef PT_LINUX
+static sigset_t _mask;
+#endif
+
 static __attribute((noreturn)) void _exit_test(int status)
 {
 	if (_nofork) {
@@ -201,16 +205,11 @@ static void _signal_wait(void)
 #ifdef PT_LINUX
 
 	int err;
-	sigset_t mask;
-	siginfo_t info;
 	struct timespec timeout = {
 		.tv_sec = 0, .tv_nsec = SLEEP_TIME,
 	};
 
-	sigemptyset(&mask);
-	sigaddset(&mask, SIGCHLD);
-
-	err = sigtimedwait(&mask, &info, &timeout);
+	err = sigtimedwait(&_mask, NULL, &timeout);
 	if (err < 0 && errno != EAGAIN) {
 		perror("sigtimedwait failed");
 		exit(1);
@@ -244,24 +243,22 @@ static void _setup_signals(void)
 		signal(SIGINT, _sigint_handler);
 	}
 
-	if (1) {
-
 #ifdef PT_LINUX
 
+	{
 		int err;
-		sigset_t mask;
 
-		sigemptyset(&mask);
-		sigaddset(&mask, SIGCHLD);
+		sigemptyset(&_mask);
+		sigaddset(&_mask, SIGCHLD);
 
-		err = sigprocmask(SIG_BLOCK, &mask, NULL);
+		err = sigprocmask(SIG_BLOCK, &_mask, NULL);
 		if (err < 0) {
 			perror("failed to change signal mask");
 			exit(1);
 		}
+	}
 
 #endif
-	}
 }
 
 static int _test_sort_cb(const void *a_, const void *b_)
