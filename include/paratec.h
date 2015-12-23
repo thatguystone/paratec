@@ -1,9 +1,9 @@
 /**
- * Run parallel unit tests in C.
+ * Run parallel unit tests in C/C++.
  *
  * @file
  * @author Andrew Stone <a@stoney.io>
- * @copyright 2014 Andrew Stone
+ * @copyright 2015 Andrew Stone
  *
  * This file is part of paratec and is released under the MIT License:
  * http://opensource.org/licenses/MIT
@@ -38,12 +38,12 @@
 #define __PT_PTR(test_fn) __paratec_sobj_##test_fn
 
 #define __PARATEC(test_fn, ...)                                                \
-	static struct paratec __PT_STRUCT(test_fn);                                \
-	static struct paratec *__PT_PTR(test_fn)                                   \
+	static struct _paratec __PT_STRUCT(test_fn);                               \
+	static struct _paratec *__PT_PTR(test_fn)                                  \
 		__attribute__((used, section(PT_SECTION))) = &__PT_STRUCT(test_fn);    \
 	static __attribute__((constructor)) void __paratec_##test_fn##_ctor(void)  \
 	{                                                                          \
-		struct paratec *p = __PT_PTR(test_fn);                                 \
+		struct _paratec *p = __PT_PTR(test_fn);                                \
 		p->fn_name = PTSTR(__PT_TEST(test_fn));                                \
 		p->name = PTSTR(test_fn);                                              \
 		p->fn = (void (*)(int64_t, uint32_t, void *))__PT_TEST(test_fn);       \
@@ -83,7 +83,8 @@
 #define PTSIG(s) p->signal_num = s
 
 /**
- * Expect this test to fail. Kinda weird to use, but no judgment.
+ * Expect this test to have failed assertions. Kinda weird to use, but no
+ * judgment.
  */
 #define PTFAIL() p->expect_fail = 1
 
@@ -131,7 +132,7 @@
  */
 #define pt_fail(msg, ...)                                                      \
 	pt_mark();                                                                 \
-	_pt_fail(msg, ##__VA_ARGS__)
+	pt_fail_(msg, ##__VA_ARGS__)
 
 /**
  * A most basic assertion. If false, fail.
@@ -382,7 +383,7 @@ __attribute__((format(printf, 1, 2))) void pt_set_iter_name(const char *format,
 /**
  * Used internally by paratec. Don't mess with any of this.
  */
-struct paratec {
+struct _paratec {
 	const char *fn_name;
 	const char *name;
 	int exit_status;
@@ -400,7 +401,8 @@ struct paratec {
 	void (*cleanup)(void);
 };
 
-__attribute__((format(printf, 1, 2))) void _pt_fail(const char *format, ...);
+__attribute__((format(printf, 1, 2),
+			   noreturn)) void pt_fail_(const char *format, ...);
 
 void _pt_mark(const char *file, const char *func, const size_t line);
 

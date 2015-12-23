@@ -1,3 +1,8 @@
+# This file is part of commake. Any changes made to this file should also be
+# made to commake so that everyone can benefit.
+#
+# https://github.com/thatguystone/commake
+
 Language: Cpp
 BasedOnStyle: Google
 

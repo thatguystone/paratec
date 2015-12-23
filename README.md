@@ -4,7 +4,7 @@ Unit testing is hard enough already, so let's try to make it a bit easier. Parat
 
 ## Quick Start
 
-Drop `paratec.{c,h}` in your project, add them to your build, and you should be off running.
+Drop `src/paratec.{c,h}` in your project, add them to your build, and you should be off running.
 
 ## Let's get testing
 

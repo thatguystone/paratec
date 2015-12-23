@@ -6,11 +6,10 @@
  * http://opensource.org/licenses/MIT
  */
 
-#include <stdio.h>
-#include "../paratec.h"
+#include <stdlib.h>
+#include "paratec.h"
 
-PARATEC(port)
+PARATEC(optsParse)
 {
-	pt_ge(pt_get_port(0), 23120);
-	pt_ge(pt_get_port(1), pt_get_port(0));
+	// @todo test negative int/dbl values
 }

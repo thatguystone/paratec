@@ -1,11 +1,11 @@
 language: c
 
-script: make test
-
 os:
-    - linux
-    - osx
+  - linux
+  - osx
 
 env:
-    - CC=clang CXX=clang++
-    - CC=gcc CXX=g++
+  - LLVM=no
+  - LLVM=llvm
+
+script: make test

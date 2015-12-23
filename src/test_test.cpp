@@ -1,17 +1,18 @@
 /**
  * @author Andrew Stone <a@stoney.io>
- * @copyright 2014 Andrew Stone
+ * @copyright 2015 Andrew Stone
  *
  * This file is part of paratec and is released under the MIT License:
  * http://opensource.org/licenses/MIT
  */
 
-#include <stdio.h>
-#include "../paratec.h"
+#include "paratec.h"
+#include "test.hpp"
 
-PARATEC(skip)
+namespace pt
 {
-	printf("skipping this test\n");
-	pt_skip();
-	printf("didn't skip\n");
+
+PARATEC(testBasic)
+{
+}
 }

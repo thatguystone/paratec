@@ -1,7 +1,9 @@
-libparatec.a
-libparatec.o
-libparatec.pc
-libparatec.so
-test/*
-!test/*.c
-!test/*.cpp
+*.a
+*.d
+*.gc*
+*.o
+*.pc
+*.so
+*.td
+*.to
+*.test
