@@ -66,7 +66,7 @@ public:
 		setlinebuf(stderr);
 	}
 
-	void setParent(int *stdout, int *stderr)
+	void getParentEnds(int *stdout, int *stderr)
 	{
 		int i;
 
@@ -110,7 +110,7 @@ bool Fork::fork(bool capture)
 	}
 
 	if (capture) {
-		pipes.setParent(&this->stdout_, &this->stderr_);
+		pipes.getParentEnds(&this->stdout_, &this->stderr_);
 	}
 
 	return true;

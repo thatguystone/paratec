@@ -11,92 +11,41 @@
 namespace pt
 {
 
-void Test::clean()
+sp<Test> Test::bindTo(int64_t i, sp<const Opts> opts) const
 {
-	if (this->cleanup != nullptr) {
-		this->cleanup();
-	}
-}
+	void *vitem = this->vec_ == nullptr ? nullptr : ((char *)this->vec_);
+	auto test = mksp<Test>(static_cast<const _paratec &>(*this), i, vitem);
 
-void Test::flush(int fd, std::string *to)
-{
-	ssize_t err;
-	char buff[4096];
+	test->opts_ = std::move(opts);
 
-	do {
-		err = read(fd, buff, sizeof(buff));
-		OSErr(err, { EAGAIN, EWOULDBLOCK }, "failed to read from subprocess");
-
-		if (err > 0) {
-			to->append(buff, err);
-		}
-	} while (err == sizeof(buff));
-}
-
-void Test::prepare(sp<const Opts> opts, sp<Results> res)
-{
-	this->opts_ = std::move(opts);
-	this->res_ = std::move(res);
-
-	for (const auto &f : this->opts_->filter_.filts_) {
-		bool matches = strstr(this->name, f.f_.c_str()) == this->name;
+	for (const auto &f : test->opts_->filter_.filts_) {
+		bool matches = strstr(test->name(), f.f_.c_str()) == test->name();
 
 		if (matches) {
-			this->enabled_ = f.neg_;
+			test->enabled_ = f.neg_;
 		}
 	}
 
-	this->res_->inc(this->enabled());
+	return test;
 }
 
-void Test::run()
+void Test::run() const
 {
-	if (!this->enabled()) {
-		Result r(this->name);
-		r.disabled_ = true;
-		this->res_->record(std::move(r), false);
-		return;
+	if (this->setup_ != NULL) {
+		this->setup_();
+	}
+
+	this->fn_(this->i_, 0, this->vitem_);
+
+	if (this->teardown_ != NULL) {
+		this->teardown_();
 	}
 }
 
-void Test::flushPipes(int stdout, int stderr)
+void Test::cleanup() const
 {
-	this->flush(stdout, &this->stdout_);
-	this->flush(stderr, &this->stderr_);
-}
-
-void Test::cleanupFork(time::point start,
-					   int status,
-					   bool timedout,
-					   bool assertsOK)
-{
-	Result r(this->name, start);
-	bool passed = false;
-
-	if (WIFEXITED(status)) {
-		r.exit_status_ = WEXITSTATUS(status);
-		passed = r.exit_status_ == this->exit_status;
-	} else if (WIFSIGNALED(status)) {
-		r.signal_num_ = WTERMSIG(status);
-		passed = r.signal_num_ == this->signal_num;
+	if (this->cleanup_ != nullptr) {
+		this->cleanup_();
 	}
-
-	if (this->skipped_) {
-		r.skipped_ = true;
-	} else if (timedout) {
-		r.timedout_ = true;
-	} else if (passed || (!assertsOK && this->expect_fail)) {
-		r.passed_ = true;
-	} else if (!assertsOK) {
-		r.failed_ = true;
-	} else {
-		r.error_ = true;
-	}
-
-	this->res_->record(std::move(r), this->opts_->capture_);
-}
-
-void Test::cleanupNoFork(time::point, bool)
-{
 }
 }

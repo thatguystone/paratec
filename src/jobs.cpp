@@ -29,48 +29,87 @@ static std::string _bin;
  */
 static std::stack<SharedJob *> _jobs;
 
-void SharedJob::Info::reset()
+bool Job::prepRun(sp<const Test> test)
 {
-	this->failed_ = false;
-	this->iter_name_[0] = '\0';
-	this->func_name_[0] = '\0';
-	this->last_mark_[0] = '\0';
-	this->last_test_mark_[0] = '\0';
-	this->fail_msg_[0] = '\0';
+	this->test_ = std::move(test);
+	this->sj_->info_->reset(this->test_->name(), this->test_->funcName());
+	this->res_.reset(this->test_);
+
+	if (!this->test_->enabled()) {
+		this->recordResult();
+		return false;
+	}
+
+	this->start_ = time::now();
+
+	return true;
+}
+
+void Job::finishRun()
+{
+	this->test_->cleanup();
+	this->res_.duration_ = time::toSeconds(time::now() - this->start_);
+	this->recordResult();
+
+	this->test_ = nullptr;
 }
 
 void BasicSharedJob::exit(int)
 {
+	if (std::this_thread::get_id() != this->thid_) {
+		printf("************************************************************\n"
+			   "*                          ERROR                           *\n"
+			   "*                                                          *\n"
+			   "*  Whoa there! You can't make assertions from any thread   *\n"
+			   "*  but the testing thread when running in single-process   *\n"
+			   "*  mode. The faulty assertion follows.                     *\n"
+			   "*                                                          *\n"
+			   "************************************************************\n"
+			   "\n"
+			   "%s : %s\n",
+			   this->info_->last_mark_, this->info_->fail_msg_);
+
+		fflush(stdout);
+		abort();
+	}
+
 	longjmp(this->jmp_, 1);
 }
 
-void BasicJob::run(sp<Test>)
+bool BasicJob::run(sp<const Test> test)
 {
+	if (!this->prepRun(std::move(test))) {
+		return false;
+	}
+
 	_jobs.push(&this->sj_);
 
 	if (setjmp(this->sj_.jmp_) == 0) {
-		this->start_ = time::now();
 		this->test_->run();
 	}
 
-	this->test_->cleanupNoFork(this->start_, !this->sj_.info_->failed_);
+	this->finishRun();
 
 	_jobs.pop();
+
+	return true;
 }
 
 ForkingSharedJob::ForkingSharedJob()
 {
-	this->sji_ = (SharedJob::Info *)mmap(NULL, sizeof(*this->sji_),
-										 PROT_READ | PROT_WRITE,
-										 MAP_ANON | MAP_SHARED, -1, 0);
-	OSErr(this->sji_ == nullptr ? -1 : 0, {}, "failed to mmap SharedJob::Info");
+	this->ti_
+		= (TestInfo *)mmap(NULL, sizeof(*this->ti_), PROT_READ | PROT_WRITE,
+						   MAP_ANON | MAP_SHARED, -1, 0);
+	OSErr(this->ti_ == nullptr ? -1 : 0, {}, "failed to mmap TestInfo");
 
-	this->info_ = this->sji_;
+	this->info_ = this->ti_;
 }
 
 ForkingSharedJob::~ForkingSharedJob()
 {
-	munmap(this->sji_, sizeof(*this->sji_));
+	if (this->ti_ != nullptr) {
+		munmap(this->ti_, sizeof(*this->ti_));
+	}
 }
 
 void ForkingSharedJob::exit(int status)
@@ -94,23 +133,43 @@ void ForkingSharedJob::exit(int status)
 	::exit(status);
 }
 
-void ForkingJob::run(sp<Test> test)
+void ForkingJob::flush(int fd, std::string *to)
 {
-	this->test_ = std::move(test);
+	ssize_t err;
+	char buff[4096];
+
+	if (fd == -1) {
+		return;
+	}
+
+	do {
+		err = read(fd, buff, sizeof(buff));
+		OSErr(err, { EAGAIN, EWOULDBLOCK }, "failed to read from subprocess");
+
+		if (err > 0) {
+			to->append(buff, err);
+		}
+	} while (err == sizeof(buff));
+}
+
+bool ForkingJob::run(sp<const Test> test)
+{
+	if (!this->prepRun(std::move(test))) {
+		return false;
+	}
+
 	this->fork_ = mksp<Fork>();
 
 	bool parent = this->fork_->fork(this->opts_->capture_);
 
 	if (parent) {
-		this->start_ = time::now();
 		this->timeout_after_ = this->start_
 							   + time::toDuration(this->test_->timeout());
-		return;
+		return true;
 	}
 
 	// Don't need to pop() the sj: this is a forked test, so the process exits
 	// and it doesn't matter.
-	this->sj_.info_->reset();
 	_jobs.push(&this->sj_);
 
 	this->test_->run();
@@ -119,11 +178,13 @@ void ForkingJob::run(sp<Test> test)
 
 void ForkingJob::flushPipes()
 {
+	// This job might not have a running test. So skip flushing.
 	if (this->fork_ == nullptr) {
 		return;
 	}
 
-	this->test_->flushPipes(this->fork_->stdout(), this->fork_->stderr());
+	this->flush(this->fork_->stdout(), &this->stdout_);
+	this->flush(this->fork_->stderr(), &this->stderr_);
 }
 
 bool ForkingJob::checkTimeout(time::point now)
@@ -134,19 +195,33 @@ bool ForkingJob::checkTimeout(time::point now)
 
 	if (now > this->timeout_after_) {
 		this->terminate();
-		this->cleanup(0, true);
+		this->res_.timedout_ = true;
+		this->cleanup();
 		return true;
 	}
 
 	return false;
 }
 
-void ForkingJob::cleanup(int status, bool timedout)
+void ForkingJob::cleanup()
 {
-	this->test_->cleanupFork(this->start_, status, timedout,
-							 !this->sj_.info_->failed_);
+	this->flushPipes();
+	this->res_.stdout_ = std::move(this->stdout_);
+	this->res_.stderr_ = std::move(this->stderr_);
+
+	this->finishRun();
 	this->fork_ = nullptr;
-	this->test_ = nullptr;
+}
+
+void ForkingJob::cleanupStatus(int status)
+{
+	if (WIFEXITED(status)) {
+		this->res_.exit_status_ = WEXITSTATUS(status);
+	} else if (WIFSIGNALED(status)) {
+		this->res_.signal_num_ = WTERMSIG(status);
+	}
+
+	this->cleanup();
 }
 
 void ForkingJob::terminate()
@@ -162,13 +237,9 @@ void Jobs::runNextTest(Job *job)
 		int i = this->testI_++;
 		auto test = this->tests_[i];
 
-		if (!test->enabled()) {
-			test->run();
-			continue;
+		if (job->run(std::move(test))) {
+			return;
 		}
-
-		job->run(std::move(test));
-		return;
 	}
 }
 
@@ -192,8 +263,10 @@ void Jobs::flushPipes()
 	}
 }
 
-Jobs::Jobs(sp<const Opts> opts, sp<Results> res, std::vector<sp<Test>> tests)
-	: opts_(std::move(opts)), res_(std::move(res)), tests_(std::move(tests))
+Jobs::Jobs(sp<const Opts> opts,
+		   sp<Results> rslts,
+		   std::vector<sp<const Test>> tests)
+	: opts_(std::move(opts)), rslts_(std::move(rslts)), tests_(std::move(tests))
 {
 	const int jobs = this->opts_->jobs_.get();
 
@@ -201,8 +274,9 @@ Jobs::Jobs(sp<const Opts> opts, sp<Results> res, std::vector<sp<Test>> tests)
 
 	_bin = this->opts_->bin_name_;
 
+	this->jobs_.reserve(jobs);
 	for (i = 0; i < jobs; i++) {
-		this->jobs_.emplace_back(this->opts_);
+		this->jobs_.emplace_back(this->opts_, this->rslts_);
 	}
 }
 
@@ -219,27 +293,23 @@ void Jobs::run()
 		this->runNextTest(&job);
 	}
 
-	while (!this->res_->done()) {
+	while (!this->rslts_->done()) {
 		sig::childWait();
+		this->flushPipes();
 
-		while (!this->res_->done()) {
+		while (!this->rslts_->done()) {
 			pid_t pid;
 			int status;
 
 			pid = waitpid(-1, &status, WNOHANG);
 			OSErr(pid, {}, "waitpid() failed");
-
-			// Just in case: only flush after process exits so there's no race
-			// condition with getting test output
-			this->flushPipes();
-
 			if (pid == 0 || (!WIFEXITED(status) && !WIFSIGNALED(status))) {
 				break;
 			}
 
 			for (auto &job : this->jobs_) {
 				if (job.pid() == pid) {
-					job.cleanup(status, false);
+					job.cleanupStatus(status);
 					this->runNextTest(&job);
 					break;
 				}
@@ -247,6 +317,59 @@ void Jobs::run()
 		}
 
 		this->checkTimeouts();
+	}
+}
+}
+
+extern "C" {
+void pt_skip(void)
+{
+	auto job = pt::_jobs.top();
+	job->info_->skipped_ = 1;
+	job->exit(0);
+}
+
+uint16_t pt_get_port(uint8_t)
+{
+	return 0;
+	// auto job = pt::_jobs.top();
+	// return _port + job->id_ + (i * _max_jobs);
+}
+
+const char *pt_get_name()
+{
+	auto job = pt::_jobs.top();
+	return job->info_->test_name_;
+}
+
+void pt_fail_(const char *format, ...)
+{
+	va_list args;
+	auto job = pt::_jobs.top();
+
+	va_start(args, format);
+	vsnprintf(job->info_->fail_msg_, sizeof(job->info_->fail_msg_), format,
+			  args);
+	va_end(args);
+
+	fflush(stdout);
+	fflush(stderr);
+
+	job->info_->failed_ = true;
+	job->exit(255);
+}
+
+void pt_mark_(const char *file, const char *func, const size_t line)
+{
+	auto job = pt::_jobs.top();
+
+	if (strcmp(job->info_->func_name_, func) == 0) {
+		*job->info_->last_mark_ = '\0';
+		snprintf(job->info_->last_test_mark_,
+				 sizeof(job->info_->last_test_mark_), "%s:%zu", file, line);
+	} else {
+		snprintf(job->info_->last_mark_, sizeof(job->info_->last_mark_),
+				 "%s:%zu", file, line);
 	}
 }
 }

@@ -44,9 +44,9 @@
 	static __attribute__((constructor)) void __paratec_##test_fn##_ctor(void)  \
 	{                                                                          \
 		struct _paratec *p = __PT_PTR(test_fn);                                \
-		p->fn_name = PTSTR(__PT_TEST(test_fn));                                \
-		p->name = PTSTR(test_fn);                                              \
-		p->fn = (void (*)(int64_t, uint32_t, void *))__PT_TEST(test_fn);       \
+		p->fn_name_ = PTSTR(__PT_TEST(test_fn));                                \
+		p->name_ = PTSTR(test_fn);                                              \
+		p->fn_ = (void (*)(int64_t, uint32_t, void *))__PT_TEST(test_fn);       \
 		__VA_ARGS__;                                                           \
 	};
 
@@ -66,7 +66,7 @@
 #define PARATECV(test_fn, tvec, ...)                                           \
 	static void __PT_TEST(test_fn)(int64_t, uint32_t, typeof(tvec[0]) *);      \
 	__PARATEC(test_fn, PTI(0, (sizeof(tvec) / sizeof((tvec)[0]))),             \
-			  p->vec = tvec, p->vecisize = sizeof((tvec)[0]), ##__VA_ARGS__)   \
+			  p->vec_ = tvec, p->vecisize_ = sizeof((tvec)[0]), ##__VA_ARGS__)   \
 	static void __PT_TEST(test_fn)(int64_t _i __attribute__((unused)),         \
 								   uint32_t _N __attribute__((unused)),        \
 								   typeof(tvec[0]) *_t                         \
@@ -75,33 +75,33 @@
 /**
  * Run a unit test, expecting the given exit status.
  */
-#define PTEXIT(s) p->exit_status = s
+#define PTEXIT(s) p->exit_status_ = s
 
 /**
  * Run a unit test, expecting the given signal.
  */
-#define PTSIG(s) p->signal_num = s
+#define PTSIG(s) p->signal_num_ = s
 
 /**
  * Expect this test to have failed assertions. Kinda weird to use, but no
  * judgment.
  */
-#define PTFAIL() p->expect_fail = 1
+#define PTFAIL() p->expect_fail_ = 1
 
 /**
  * Run a unit test with a specific timeout (in seconds as a double).
  */
-#define PTTIME(s) p->timeout = s
+#define PTTIME(s) p->timeout_ = s
 
 /**
  * Add a setup function to the test that runs in the isolated environment.
  */
-#define PTUP(fn) p->setup = fn
+#define PTUP(fn) p->setup_ = fn
 
 /**
  * Add a teardown function to the test that runs in the isolated environment.
  */
-#define PTDOWN(fn) p->teardown = fn
+#define PTDOWN(fn) p->teardown_ = fn
 
 /**
  * Cleanup after a test, outside of the testing environment. Even if a test
@@ -109,23 +109,23 @@
  * it's only a cleanup function an not part of your test; running any assertions
  * will result in undefined behavior.
  */
-#define PTCLEANUP(fn) p->cleanup = fn
+#define PTCLEANUP(fn) p->cleanup_ = fn
 
 /**
  * Run a test multiple times, over the given range.
  * Does: for (i = a; i < b; i++);
  */
-#define PTI(a, b) p->range_low = a, p->range_high = b
+#define PTI(a, b) p->range_low_ = a, p->range_high_ = b
 
 /**
  * This test is a benchmark
  */
-#define PTBENCH() p->bench = 1
+#define PTBENCH() p->bench_ = 1
 
 /**
  * Mark that the test hit this line
  */
-#define pt_mark() _pt_mark(__FILE__, __func__, __LINE__)
+#define pt_mark() pt_mark_(__FILE__, __func__, __LINE__)
 
 /**
  * Fail right now with the given message.
@@ -384,27 +384,27 @@ __attribute__((format(printf, 1, 2))) void pt_set_iter_name(const char *format,
  * Used internally by paratec. Don't mess with any of this.
  */
 struct _paratec {
-	const char *fn_name;
-	const char *name;
-	int exit_status;
-	int signal_num;
-	double timeout;
-	int expect_fail;
-	int64_t range_low;
-	int64_t range_high;
-	void *vec;
-	size_t vecisize;
-	int bench;
-	void (*fn)(int64_t, uint32_t, void *);
-	void (*setup)(void);
-	void (*teardown)(void);
-	void (*cleanup)(void);
+	const char *fn_name_;
+	const char *name_;
+	int exit_status_;
+	int signal_num_;
+	double timeout_;
+	int expect_fail_;
+	int64_t range_low_;
+	int64_t range_high_;
+	void *vec_;
+	size_t vecisize_;
+	int bench_;
+	void (*fn_)(int64_t, uint32_t, void *);
+	void (*setup_)(void);
+	void (*teardown_)(void);
+	void (*cleanup_)(void);
 };
 
 __attribute__((format(printf, 1, 2),
 			   noreturn)) void pt_fail_(const char *format, ...);
 
-void _pt_mark(const char *file, const char *func, const size_t line);
+void pt_mark_(const char *file, const char *func, const size_t line);
 
 #ifdef __cplusplus
 }

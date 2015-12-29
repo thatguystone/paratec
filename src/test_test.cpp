@@ -15,4 +15,6 @@ namespace pt
 PARATEC(testBasic)
 {
 }
+
+// @todo test vector test with 0 items (should not execute at all)
 }

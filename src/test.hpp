@@ -8,37 +8,67 @@
  */
 
 #pragma once
+#include <tuple>
 #include "opts.hpp"
 #include "paratec.h"
-#include "results.hpp"
 #include "std.hpp"
-#include "time.hpp"
+#include "test_info.hpp"
 
 namespace pt
 {
 
-class Test : _paratec
+/**
+ * A description of a test. You'll typically just want to use this as a const
+ * guy everywhere.
+ */
+class Test : public _paratec
 {
+	std::string name_;
 	sp<const Opts> opts_;
-	sp<Results> res_;
+
+	/**
+	 * For vector tests
+	 */
+	int64_t i_ = 0;
+	void *vitem_ = nullptr;
 
 	bool enabled_ = true;
-	bool skipped_ = false;
-	std::string stdout_;
-	std::string stderr_;
-
-	void clean();
-	void flush(int fd, std::string *to);
 
 public:
-	Test(const _paratec &p) : _paratec(p)
+	Test(const _paratec &p) : _paratec(p), name_(p.name_)
 	{
 	}
 
+	Test(const _paratec &p, int64_t i, void *vitem) : Test(p)
+	{
+		this->i_ = i;
+		this->vitem_ = vitem;
+
+		this->name_ += ':';
+		this->name_ += std::to_string(i);
+	}
+
 	/**
-	 * Give the test everything it needs to run
+	 * Create a new test that runs at the given index, bound to the given
+	 * options.
 	 */
-	void prepare(sp<const Opts> opts, sp<Results> res);
+	sp<Test> bindTo(int64_t i, sp<const Opts> opts) const;
+
+	/**
+	 * Human-friendly test name, with index if an iterated test.
+	 */
+	inline const char *name() const
+	{
+		return this->name_.c_str();
+	}
+
+	/**
+	 * Test function name, as reported by __func__
+	 */
+	inline const char *funcName() const
+	{
+		return this->fn_name_;
+	}
 
 	/**
 	 * If this test needs to run
@@ -53,43 +83,30 @@ public:
 	 */
 	inline double timeout() const
 	{
-		return _paratec::timeout ?: this->opts_->timeout_.get();
+		return this->timeout_ ?: this->opts_->timeout_.get();
+	}
+
+	/**
+	 * Range of the test.
+	 */
+	inline std::tuple<bool, int64_t, int64_t> getRange() const
+	{
+		int64_t low = this->range_low_;
+		int64_t high = this->range_high_;
+		bool ranged = high != 0 || low != 0;
+
+		return std::tuple<bool, int64_t, int64_t>(ranged, low, high);
 	}
 
 	/**
 	 * Run the test. If the test is not enabled, this just adds a skipped
 	 * result to Results and returns.
 	 */
-	void run();
+	void run() const;
 
 	/**
-	 * Capture stdout/stderr
+	 * Run the test's cleanup function
 	 */
-	void flushPipes(int stdout, int stderr);
-
-	/**
-	 * Cleanup after a forked test.
-	 *
-	 * @param start
-	 *     When the test was started
-	 * @param status
-	 *     Exit status from waiting on the process
-	 * @param timedout
-	 *     If killed by timeout
-	 * @param assertsOK
-	 *     If no test assertions failed
-	 */
-	void
-	cleanupFork(time::point start, int status, bool timedout, bool assertsOK);
-
-	/**
-	 * Cleanup after a no-fork test.
-	 *
-	 * @param start
-	 *     When the test was started
-	 * @param assertsOK
-	 *     If no test assertions failed
-	 */
-	void cleanupNoFork(time::point start, bool assertsOK);
+	void cleanup() const;
 };
 }

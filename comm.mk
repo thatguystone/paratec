@@ -37,6 +37,10 @@ ifeq ($(OS),Darwin)
 	export OS_OSX = 1
 endif
 
+ifndef NAME
+$(error NAME must be set)
+endif
+
 SO = $(NAME).so
 PC = $(NAME).pc
 SONAME = $(SO).$(SOVERSION)

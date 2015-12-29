@@ -6,6 +6,7 @@
  * http://opensource.org/licenses/MIT
  */
 
+#include <errno.h>
 #include <string.h>
 #include "err.hpp"
 

@@ -9,9 +9,11 @@
 
 #pragma once
 #include <setjmp.h>
+#include <thread>
 #include <unistd.h>
 #include <vector>
 #include "fork.hpp"
+#include "results.hpp"
 #include "test.hpp"
 #include "time.hpp"
 
@@ -23,48 +25,9 @@ namespace pt
  */
 struct SharedJob {
 	/**
-	 * May only contain data elements that are safe to share across processes.
-	 */
-	struct Info {
-		static constexpr int kSize = 2048;
-
-		/**
-		 * If this test failed
-		 */
-		bool failed_;
-
-		/**
-		 * Name of the test's function (from __func__).
-		 */
-		char func_name_[kSize];
-
-		/**
-		 * Name set by pt_set_iter_name()
-		 */
-		char iter_name_[kSize];
-
-		/**
-		 * Last mark that was hit
-		 */
-		char last_mark_[kSize];
-
-		/**
-		 * Last mark from insize the test function
-		 */
-		char last_test_mark_[kSize];
-
-		/**
-		 * Message to display to user on failure
-		 */
-		char fail_msg_[kSize * 4];
-
-		void reset();
-	};
-
-	/**
 	 * Set this in sub-class (so that mmap may be used as necessary).
 	 */
-	Info *info_;
+	TestInfo *info_;
 
 	virtual ~SharedJob() = default;
 
@@ -78,19 +41,46 @@ class Job
 {
 protected:
 	sp<const Opts> opts_;
+	sp<Results> rslts_;
+	SharedJob *sj_;
 
 	/**
 	 * Current test being given some love
 	 */
-	sp<Test> test_;
+	sp<const Test> test_;
+
+	/**
+	 * Results for this test
+	 */
+	Result res_;
 
 	/**
 	 * When the current test started
 	 */
 	time::point start_;
 
+	/**
+	 * Reset the job for the given test. Returns false if the test is disabled
+	 * and should be skipped.
+	 */
+	bool prepRun(sp<const Test> test);
+
+	/**
+	 * Finish the test run
+	 */
+	void finishRun();
+
+	/**
+	 * Record the test result
+	 */
+	inline void recordResult()
+	{
+		this->rslts_->record(*this->sj_->info_, std::move(this->res_));
+	}
+
 public:
-	Job(sp<const Opts> opts) : opts_(std::move(opts))
+	Job(sp<const Opts> opts, sp<Results> rslts, SharedJob *sj)
+		: opts_(std::move(opts)), rslts_(std::move(rslts)), sj_(sj)
 	{
 	}
 
@@ -99,16 +89,17 @@ public:
 	/**
 	 * Run the test.
 	 */
-	virtual void run(sp<Test> test) = 0;
+	virtual bool run(sp<const Test> test) = 0;
 };
 
 struct BasicSharedJob : public SharedJob {
 	jmp_buf jmp_;
-	SharedJob::Info sji_;
+	TestInfo ti_;
+	std::thread::id thid_;
 
-	BasicSharedJob()
+	BasicSharedJob() : thid_(std::this_thread::get_id())
 	{
-		this->info_ = &sji_;
+		this->info_ = &ti_;
 	}
 
 	[[noreturn]] void exit(int status) override;
@@ -122,22 +113,34 @@ class BasicJob : public Job
 	BasicSharedJob sj_;
 
 public:
-	BasicJob(sp<const Opts> opts) : Job(std::move(opts))
+	BasicJob(sp<const Opts> opts, sp<Results> rslts)
+		: Job(std::move(opts), std::move(rslts), &sj_)
 	{
 	}
 
 	/**
 	 * Run and cleanup the test.
 	 */
-	void run(sp<Test> test) override;
+	bool run(sp<const Test> test) override;
 };
 
 class ForkingSharedJob : public SharedJob
 {
-	SharedJob::Info *sji_ = nullptr;
+	TestInfo *ti_ = nullptr;
 
 public:
 	ForkingSharedJob();
+
+	/**
+	 * Let's not copy an mmap'd segment
+	 */
+	ForkingSharedJob(const ForkingSharedJob &) = delete;
+
+	/**
+	 * It's cool to move this, though
+	 */
+	ForkingSharedJob(ForkingSharedJob &&) = default;
+
 	~ForkingSharedJob() override;
 
 	[[noreturn]] void exit(int status) override;
@@ -156,16 +159,25 @@ class ForkingJob : public Job
 	sp<Fork> fork_;
 
 	/**
+	 * Captured output from the forked process
+	 */
+	std::string stdout_;
+	std::string stderr_;
+
+	/**
 	 * When the test should time out at
 	 */
 	time::point timeout_after_;
 
+	void flush(int fd, std::string *to);
+
 public:
-	ForkingJob(sp<const Opts> opts) : Job(std::move(opts))
+	ForkingJob(sp<const Opts> opts, sp<Results> rslts)
+		: Job(std::move(opts), std::move(rslts), &sj_)
 	{
 	}
 
-	inline pid_t pid()
+	inline pid_t pid() const
 	{
 		if (this->fork_ != nullptr) {
 			return this->fork_->pid();
@@ -177,7 +189,7 @@ public:
 	/**
 	 * Run this test.
 	 */
-	void run(sp<Test> test) override;
+	bool run(sp<const Test> test) override;
 
 	/**
 	 * Flush the test's pipes
@@ -192,7 +204,12 @@ public:
 	/**
 	 * The test finished. Clean him up.
 	 */
-	void cleanup(int status, bool timedout);
+	void cleanup();
+
+	/**
+	 * The test finished with a status (from waitpid)
+	 */
+	void cleanupStatus(int status);
 
 	/**
 	 * Terminate this test
@@ -206,9 +223,9 @@ public:
 class Jobs
 {
 	sp<const Opts> opts_;
-	sp<Results> res_;
+	sp<Results> rslts_;
 	size_t testI_ = 0;
-	std::vector<sp<Test>> tests_;
+	std::vector<sp<const Test>> tests_;
 	std::vector<ForkingJob> jobs_;
 
 	/**
@@ -230,7 +247,9 @@ public:
 	/**
 	 * Run this many jobs in parallel
 	 */
-	Jobs(sp<const Opts> opts, sp<Results> res, std::vector<sp<Test>> tests);
+	Jobs(sp<const Opts> opts,
+		 sp<Results> rslts,
+		 std::vector<sp<const Test>> tests);
 
 	/**
 	 * Prematurely terminate all jobs. Only used from a signal handler to

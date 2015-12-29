@@ -8,6 +8,7 @@
  */
 
 #pragma once
+#include <getopt.h>
 #include <string>
 #include <vector>
 #include <unistd.h>
@@ -39,9 +40,9 @@ public:
 
 	virtual void parse(std::string val) = 0;
 
-	virtual bool hasArg()
+	virtual int argType()
 	{
-		return true;
+		return required_argument;
 	}
 
 	void showUsage();
@@ -86,6 +87,11 @@ protected:
 	}
 
 public:
+	virtual int argType() override
+	{
+		return required_argument;
+	}
+
 	inline T get() const
 	{
 		return this->v_;
@@ -94,11 +100,6 @@ public:
 	inline void set(T v)
 	{
 		this->v_ = v;
-	}
-
-	bool hasArg() override
-	{
-		return true;
 	}
 
 	void parse(std::string v) override;
@@ -233,16 +234,36 @@ public:
 	}
 };
 
-class VerboseOpt : public TypedOpt<bool>
+class VerboseOpt : public TypedOpt<int>
 {
 public:
 	VerboseOpt()
-		: TypedOpt<bool>("verbose",
-						 'v',
-						 "PTVERBOSE",
-						 "be more verbose with the test summary; pass "
-						 "multiple times to increase verbosity")
+		: TypedOpt<int>("verbose",
+						'v',
+						"PTVERBOSE",
+						"be more verbose with the test summary; pass "
+						"multiple times to increase verbosity")
 	{
+	}
+
+	void parse(std::string v) override
+	{
+		this->v_ += std::max((size_t)1, v.size());
+	}
+
+	int argType() override
+	{
+		return optional_argument;
+	}
+
+	bool allStatuses() const
+	{
+		return this->v_ >= 1;
+	}
+
+	bool passedOutput() const
+	{
+		return this->v_ >= 2;
 	}
 };
 

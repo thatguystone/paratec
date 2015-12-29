@@ -23,17 +23,17 @@ class Fork
 public:
 	~Fork();
 
-	inline pid_t pid()
+	inline pid_t pid() const
 	{
 		return this->pid_;
 	}
 
-	inline int stdout()
+	inline int stdout() const
 	{
 		return this->stdout_;
 	}
 
-	inline int stderr()
+	inline int stderr() const
 	{
 		return this->stderr_;
 	}

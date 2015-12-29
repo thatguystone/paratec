@@ -68,17 +68,35 @@ Main::~Main()
 Results Main::run(const std::vector<const char *> &args)
 {
 	int err;
+	std::vector<sp<const Test>> tests;
 
 	this->opts_->parse(std::move(args));
-	auto res = mksp<Results>(this->opts_);
+	auto rslts = mksp<Results>(this->opts_);
+
+	auto addTest = [&](sp<Test> t) {
+		rslts->inc(t->enabled());
+		tests.push_back(std::move(t));
+	};
+
 	for (auto &test : this->tests_) {
-		test->prepare(this->opts_, res);
+		bool ranged;
+		int64_t low;
+		int64_t high;
+		std::tie(ranged, low, high) = test->getRange();
+
+		if (!ranged) {
+			addTest(test->bindTo(0, this->opts_));
+		} else {
+			int64_t i;
+			for (i = low; i < high; i++) {
+				addTest(test->bindTo(i, this->opts_));
+			}
+		}
 	}
 
 	// Shuffle tests on each run to ensure that tests don't accidentally rely
 	// on implied ordering.
-	std::shuffle(this->tests_.begin(), this->tests_.end(),
-				 std::random_device());
+	std::shuffle(tests.begin(), tests.end(), std::random_device());
 
 	if (this->opts_->capture_) {
 		err = setenv("LIBC_FATAL_STDERR_", "1", 1);
@@ -86,17 +104,17 @@ Results Main::run(const std::vector<const char *> &args)
 	}
 
 	if (this->opts_->fork_) {
-		auto jobs = mksp<Jobs>(this->opts_, res, std::move(this->tests_));
+		auto jobs = mksp<Jobs>(this->opts_, rslts, std::move(tests));
 		sig::takeover(jobs);
-		res->startTimer();
+		rslts->startTimer();
 		jobs->run();
 	} else {
-		res->startTimer();
+		rslts->startTimer();
 		for (auto &test : this->tests_) {
-			BasicJob(this->opts_).run(test);
+			BasicJob(this->opts_, rslts).run(test);
 		}
 	}
 
-	return *res.get();
+	return *rslts;
 }
 }

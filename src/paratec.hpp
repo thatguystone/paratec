@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 #include "opts.hpp"
+#include "results.hpp"
 #include "std.hpp"
 #include "test.hpp"
 
@@ -20,7 +21,7 @@ namespace pt
 class Main
 {
 	sp<Opts> opts_ = mksp<Opts>();
-	std::vector<sp<Test>> tests_;
+	std::vector<sp<const Test>> tests_;
 
 public:
 	/**
@@ -31,7 +32,7 @@ public:
 	/**
 	 * Use these tests instead
 	 */
-	Main(std::initializer_list<sp<Test>> tests) : tests_(std::move(tests))
+	Main(std::initializer_list<sp<const Test>> tests) : tests_(std::move(tests))
 	{
 	}
 

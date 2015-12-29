@@ -13,6 +13,8 @@
 #include "opts.hpp"
 #include "time.hpp"
 #include "std.hpp"
+#include "test.hpp"
+#include "test_info.hpp"
 
 namespace pt
 {
@@ -20,9 +22,18 @@ namespace pt
 /**
  * Result of a single test run
  */
-struct Result {
+class Result
+{
+	sp<const Test> test_;
+	time::point start_;
+
+	void dumpOuts(bool print) const;
+	void dumpOut(const char *which, const std::string &s) const;
+
+public:
 	/**
-	 * Name of the test that generated this result
+	 * Name of the test that generated this result. Possibly modified by
+	 * pt_set_iter_name().
 	 */
 	std::string name_;
 
@@ -52,9 +63,14 @@ struct Result {
 	bool timedout_ = false;
 
 	/**
-	 * If this test was disabled
+	 * Last line this test executed
 	 */
-	bool disabled_ = false;
+	std::string last_line_;
+
+	/**
+	 * Failure message from an assertions
+	 */
+	std::string fail_msg_;
 
 	/**
 	 * Status code of the test
@@ -71,24 +87,39 @@ struct Result {
 	 */
 	double duration_ = 0.0;
 
+	/**
+	 * Bench results
+	 */
+	uint64_t bench_iters_ = 0;
+	uint64_t bench_ns_op_ = 0;
+
+	/**
+	 * Captured stdout
+	 */
 	std::string stdout_;
+
+	/**
+	 * Captured stderr
+	 */
 	std::string stderr_;
 
-	Result(std::string name, time::point start = time::point{})
-		: name_(std::move(name))
-	{
-		if (start != time::point{}) {
-			this->duration_ = time::toSeconds(time::now() - start);
-		}
-	}
+	/**
+	 * Reset and get ready to record a new result
+	 */
+	void reset(sp<const Test> test);
 
 	/**
 	 * For sorting
 	 */
-	bool operator<(const Result &o)
+	bool operator<(const Result &o) const
 	{
 		return this->name_ < o.name_;
 	}
+
+	/**
+	 * Do any result cleanup
+	 */
+	void finalize(const TestInfo &ti, sp<const Opts> opts);
 
 	/**
 	 * Print a summary of this result
@@ -133,12 +164,12 @@ public:
 	/**
 	 * Record a test result
 	 */
-	void record(Result r, bool print_status);
+	void record(const TestInfo &ti, Result r);
 
 	/**
 	 * Check if all tests are done running
 	 */
-	inline bool done()
+	inline bool done() const
 	{
 		return this->finished_ == this->total_;
 	}
@@ -146,7 +177,7 @@ public:
 	/**
 	 * Exit code to use
 	 */
-	inline int exitCode()
+	inline int exitCode() const
 	{
 		return this->passes_ == this->enabled_ ? 0 : 1;
 	}

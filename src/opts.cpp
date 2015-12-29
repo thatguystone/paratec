@@ -8,7 +8,6 @@
 
 #include <stdexcept>
 #include <string>
-#include <getopt.h>
 #include <stdlib.h>
 #include <string.h>
 #include "err.hpp"
@@ -46,6 +45,10 @@ template <> void TypedOpt<double>::parse(std::string arg)
 {
 	try {
 		this->set(std::stod(arg));
+
+		if (this->get() < 0) {
+			Err(-1, "`%s` must not be less than 0", arg.c_str());
+		}
 	} catch (std::invalid_argument) {
 		Err(-1, "`%s` could not be parsed to a double", arg.c_str());
 	} catch (std::out_of_range) {
@@ -58,9 +61,9 @@ template <> void TypedOpt<bool>::parse(std::string)
 	this->set(true);
 }
 
-template <> bool TypedOpt<bool>::hasArg()
+template <> int TypedOpt<bool>::argType()
 {
-	return false;
+	return no_argument;
 }
 
 void FilterOpt::parse(std::string args)
@@ -102,6 +105,8 @@ void HelpOpt::usage(const std::vector<const char *> &args,
 	for (auto opt : opts) {
 		opt->showUsage();
 	}
+
+	exit(1);
 }
 
 void Opts::parse(std::vector<const char *> args)
@@ -148,11 +153,15 @@ void Opts::tryParse(const std::vector<const char *> &args,
 
 		optstr += opt->arg_;
 
-		if (opt->hasArg()) {
+		lopt->has_arg = opt->argType();
+		switch (lopt->has_arg) {
+		case required_argument:
 			optstr += ':';
-			lopt->has_arg = required_argument;
-		} else {
-			lopt->has_arg = no_argument;
+			break;
+
+		case optional_argument:
+			optstr += "::";
+			break;
 		}
 
 		char *v = getenv(opt->env_.c_str());
@@ -161,6 +170,7 @@ void Opts::tryParse(const std::vector<const char *> &args,
 		}
 	}
 
+	optind = 1;
 	while (1) {
 		char c = getopt_long(args.size(), (char *const *)args.data(),
 							 optstr.c_str(), lopts, NULL);
