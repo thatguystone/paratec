@@ -27,7 +27,7 @@ struct SharedJob {
 	/**
 	 * Set this in sub-class (so that mmap may be used as necessary).
 	 */
-	TestInfo *info_;
+	TestEnv *env_;
 
 	virtual ~SharedJob() = default;
 
@@ -75,7 +75,7 @@ protected:
 	 */
 	inline void recordResult()
 	{
-		this->rslts_->record(*this->sj_->info_, std::move(this->res_));
+		this->rslts_->record(*this->sj_->env_, std::move(this->res_));
 	}
 
 public:
@@ -94,12 +94,12 @@ public:
 
 struct BasicSharedJob : public SharedJob {
 	jmp_buf jmp_;
-	TestInfo ti_;
+	TestEnv te_;
 	std::thread::id thid_;
 
 	BasicSharedJob() : thid_(std::this_thread::get_id())
 	{
-		this->info_ = &ti_;
+		this->env_ = &this->te_;
 	}
 
 	[[noreturn]] void exit(int status) override;
@@ -126,7 +126,7 @@ public:
 
 class ForkingSharedJob : public SharedJob
 {
-	TestInfo *ti_ = nullptr;
+	TestEnv *te_ = nullptr;
 
 public:
 	ForkingSharedJob();

@@ -7,12 +7,12 @@
  */
 
 #include <string.h>
-#include "test_info.hpp"
+#include "test_env.hpp"
 
 namespace pt
 {
 
-void TestInfo::reset(const char *test_name, const char *func_name)
+void TestEnv::reset(const char *test_name, const char *func_name)
 {
 	this->failed_ = false;
 	this->skipped_ = false;

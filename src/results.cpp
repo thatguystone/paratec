@@ -56,19 +56,19 @@ void Result::dumpOut(const char *which, const std::string &s) const
 	}
 }
 
-void Result::finalize(const TestInfo &ti, sp<const Opts> opts)
+void Result::finalize(const TestEnv &te, sp<const Opts> opts)
 {
 	const auto &v = opts->verbose_;
 
-	this->name_ = ti.test_name_;
+	this->name_ = te.test_name_;
 
-	if (ti.skipped_) {
+	if (te.skipped_) {
 		this->skipped_ = true;
 	} else if (this->timedout_) {
 		// Skip so that the fallthrough isn't hit
-	} else if (!ti.failed_ || (ti.failed_ && this->test_->expect_fail_)) {
+	} else if (!te.failed_ || (te.failed_ && this->test_->expect_fail_)) {
 		this->passed_ = true;
-	} else if (ti.failed_) {
+	} else if (te.failed_) {
 		this->failed_ = true;
 	} else {
 		this->error_ = true;
@@ -80,15 +80,15 @@ void Result::finalize(const TestInfo &ti, sp<const Opts> opts)
 	}
 
 	if (!this->passed_) {
-		this->fail_msg_ = ti.fail_msg_;
+		this->fail_msg_ = te.fail_msg_;
 
-		if (*ti.last_mark_ != '\0') {
-			char buff[sizeof(ti.last_mark_) * 2];
+		if (*te.last_mark_ != '\0') {
+			char buff[sizeof(te.last_mark_) * 2];
 			snprintf(buff, sizeof(buff), "%s (last test assert: %s)",
-					 ti.last_mark_, ti.last_test_mark_);
+					 te.last_mark_, te.last_test_mark_);
 			this->last_line_ = buff;
 		} else {
-			this->last_line_ = ti.last_test_mark_;
+			this->last_line_ = te.last_test_mark_;
 		}
 	}
 }
@@ -172,7 +172,7 @@ void Results::inc(bool enabled)
 	}
 }
 
-void Results::record(const TestInfo &ti, Result r)
+void Results::record(const TestEnv &ti, Result r)
 {
 	char summary = '\0';
 

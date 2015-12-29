@@ -32,7 +32,7 @@ static std::stack<SharedJob *> _jobs;
 bool Job::prepRun(sp<const Test> test)
 {
 	this->test_ = std::move(test);
-	this->sj_->info_->reset(this->test_->name(), this->test_->funcName());
+	this->sj_->env_->reset(this->test_->name(), this->test_->funcName());
 	this->res_.reset(this->test_);
 
 	if (!this->test_->enabled()) {
@@ -67,7 +67,7 @@ void BasicSharedJob::exit(int)
 			   "************************************************************\n"
 			   "\n"
 			   "%s : %s\n",
-			   this->info_->last_mark_, this->info_->fail_msg_);
+			   this->env_->last_mark_, this->env_->fail_msg_);
 
 		fflush(stdout);
 		abort();
@@ -97,18 +97,18 @@ bool BasicJob::run(sp<const Test> test)
 
 ForkingSharedJob::ForkingSharedJob()
 {
-	this->ti_
-		= (TestInfo *)mmap(NULL, sizeof(*this->ti_), PROT_READ | PROT_WRITE,
-						   MAP_ANON | MAP_SHARED, -1, 0);
-	OSErr(this->ti_ == nullptr ? -1 : 0, {}, "failed to mmap TestInfo");
+	this->te_
+		= (TestEnv *)mmap(NULL, sizeof(*this->te_), PROT_READ | PROT_WRITE,
+						  MAP_ANON | MAP_SHARED, -1, 0);
+	OSErr(this->te_ == nullptr ? -1 : 0, {}, "failed to mmap TestEnv");
 
-	this->info_ = this->ti_;
+	this->env_ = this->te_;
 }
 
 ForkingSharedJob::~ForkingSharedJob()
 {
-	if (this->ti_ != nullptr) {
-		munmap(this->ti_, sizeof(*this->ti_));
+	if (this->te_ != nullptr) {
+		munmap(this->te_, sizeof(*this->te_));
 	}
 }
 
@@ -325,7 +325,7 @@ extern "C" {
 void pt_skip(void)
 {
 	auto job = pt::_jobs.top();
-	job->info_->skipped_ = 1;
+	job->env_->skipped_ = 1;
 	job->exit(0);
 }
 
@@ -339,7 +339,7 @@ uint16_t pt_get_port(uint8_t)
 const char *pt_get_name()
 {
 	auto job = pt::_jobs.top();
-	return job->info_->test_name_;
+	return job->env_->test_name_;
 }
 
 void pt_fail_(const char *format, ...)
@@ -348,14 +348,13 @@ void pt_fail_(const char *format, ...)
 	auto job = pt::_jobs.top();
 
 	va_start(args, format);
-	vsnprintf(job->info_->fail_msg_, sizeof(job->info_->fail_msg_), format,
-			  args);
+	vsnprintf(job->env_->fail_msg_, sizeof(job->env_->fail_msg_), format, args);
 	va_end(args);
 
 	fflush(stdout);
 	fflush(stderr);
 
-	job->info_->failed_ = true;
+	job->env_->failed_ = true;
 	job->exit(255);
 }
 
@@ -363,13 +362,13 @@ void pt_mark_(const char *file, const char *func, const size_t line)
 {
 	auto job = pt::_jobs.top();
 
-	if (strcmp(job->info_->func_name_, func) == 0) {
-		*job->info_->last_mark_ = '\0';
-		snprintf(job->info_->last_test_mark_,
-				 sizeof(job->info_->last_test_mark_), "%s:%zu", file, line);
-	} else {
-		snprintf(job->info_->last_mark_, sizeof(job->info_->last_mark_),
+	if (strcmp(job->env_->func_name_, func) == 0) {
+		*job->env_->last_mark_ = '\0';
+		snprintf(job->env_->last_test_mark_, sizeof(job->env_->last_test_mark_),
 				 "%s:%zu", file, line);
+	} else {
+		snprintf(job->env_->last_mark_, sizeof(job->env_->last_mark_), "%s:%zu",
+				 file, line);
 	}
 }
 }

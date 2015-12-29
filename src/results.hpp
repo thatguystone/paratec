@@ -14,7 +14,7 @@
 #include "time.hpp"
 #include "std.hpp"
 #include "test.hpp"
-#include "test_info.hpp"
+#include "test_env.hpp"
 
 namespace pt
 {
@@ -119,7 +119,7 @@ public:
 	/**
 	 * Do any result cleanup
 	 */
-	void finalize(const TestInfo &ti, sp<const Opts> opts);
+	void finalize(const TestEnv &te, sp<const Opts> opts);
 
 	/**
 	 * Print a summary of this result
@@ -164,7 +164,7 @@ public:
 	/**
 	 * Record a test result
 	 */
-	void record(const TestInfo &ti, Result r);
+	void record(const TestEnv &te, Result r);
 
 	/**
 	 * Check if all tests are done running

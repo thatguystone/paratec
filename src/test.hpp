@@ -12,7 +12,7 @@
 #include "opts.hpp"
 #include "paratec.h"
 #include "std.hpp"
-#include "test_info.hpp"
+#include "test_env.hpp"
 
 namespace pt
 {
