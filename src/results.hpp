@@ -104,6 +104,14 @@ public:
 	std::string stderr_;
 
 	/**
+	 * If the test for this result was enabled
+	 */
+	inline bool enabled() const
+	{
+		return this->test_->enabled();
+	}
+
+	/**
 	 * Reset and get ready to record a new result
 	 */
 	void reset(sp<const Test> test);
@@ -181,6 +189,11 @@ public:
 	{
 		return this->passes_ == this->enabled_ ? 0 : 1;
 	}
+
+	/**
+	 * Get the result of the test with the given name
+	 */
+	Result get(const std::string &name);
 
 	/**
 	 * Dump a summary of all tests

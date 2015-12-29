@@ -73,7 +73,7 @@ Results Main::run(const std::vector<const char *> &args)
 	this->opts_->parse(std::move(args));
 	auto rslts = mksp<Results>(this->opts_);
 
-	auto addTest = [&](sp<Test> t) {
+	auto addTest = [&](sp<const Test> t) {
 		rslts->inc(t->enabled());
 		tests.push_back(std::move(t));
 	};

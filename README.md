@@ -1,10 +1,10 @@
-# Paratec: Parallel Testing in C [![Build Status](https://travis-ci.org/thatguystone/paratec.svg?branch=master)](https://travis-ci.org/thatguystone/paratec)
+# Paratec: Parallel Testing for C/C++ [![Build Status](https://travis-ci.org/thatguystone/paratec.svg?branch=master)](https://travis-ci.org/thatguystone/paratec)
 
 Unit testing is hard enough already, so let's try to make it a bit easier. Paratec is a simple unit testing framework that stays out of your way while making your life easier. Tests are always run in isolation from each other and in parallel, so everything is always fast and safe.
 
 ## Quick Start
 
-Drop `src/paratec.{c,h}` in your project, add them to your build, and you should be off running.
+FIXME: update installation details
 
 ## Let's get testing
 
@@ -230,7 +230,7 @@ The following are all valid filters:
 There are 3 levels of verbosity:
 
 1. `-v`: print tests that succeeded
-1. `-vv`: print skipped tests
+1. `-vv`: print skipped/disabled tests
 1. `-vvv`: print stdout/stderr of passed tests
 
 `PTVERBOSE=` is the equivalent of `-v`; `PTVERBOSE=vv` is the equivalent of `-vvv`, and so forth.

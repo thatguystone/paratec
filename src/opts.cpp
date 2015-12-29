@@ -109,20 +109,27 @@ void HelpOpt::usage(const std::vector<const char *> &args,
 	exit(1);
 }
 
+std::vector<Opt *> Opts::getOpts()
+{
+	return {
+		&this->bench_,   &this->bench_dur_,  &this->filter_,  &this->help_,
+		&this->jobs_,	&this->no_capture_, &this->no_fork_, &this->port_,
+		&this->timeout_, &this->verbose_,
+	};
+}
+
+void Opts::clearEnv()
+{
+	auto opts = this->getOpts();
+
+	for (const auto &opt : opts) {
+		unsetenv(opt->env_.c_str());
+	}
+}
+
 void Opts::parse(std::vector<const char *> args)
 {
-	std::vector<Opt *> opts({
-		&this->bench_,
-		&this->bench_dur_,
-		&this->filter_,
-		&this->help_,
-		&this->jobs_,
-		&this->no_capture_,
-		&this->no_fork_,
-		&this->port_,
-		&this->timeout_,
-		&this->verbose_,
-	});
+	auto opts = this->getOpts();
 
 	try {
 		this->tryParse(args, opts);

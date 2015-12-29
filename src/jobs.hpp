@@ -63,12 +63,17 @@ protected:
 	 * Reset the job for the given test. Returns false if the test is disabled
 	 * and should be skipped.
 	 */
-	bool prepRun(sp<const Test> test);
+	bool prep(sp<const Test> test);
+
+	/**
+	 * Execute the job
+	 */
+	void execute();
 
 	/**
 	 * Finish the test run
 	 */
-	void finishRun();
+	void finish();
 
 	/**
 	 * Record the test result
@@ -139,7 +144,11 @@ public:
 	/**
 	 * It's cool to move this, though
 	 */
-	ForkingSharedJob(ForkingSharedJob &&) = default;
+	ForkingSharedJob(ForkingSharedJob &&o)
+	{
+		this->te_ = o.te_;
+		o.te_ = nullptr;
+	}
 
 	~ForkingSharedJob() override;
 

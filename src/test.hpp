@@ -44,15 +44,17 @@ public:
 		this->i_ = i;
 		this->vitem_ = vitem;
 
-		this->name_ += ':';
-		this->name_ += std::to_string(i);
+		if (this->isRanged()) {
+			this->name_ += ':';
+			this->name_ += std::to_string(i);
+		}
 	}
 
 	/**
 	 * Create a new test that runs at the given index, bound to the given
 	 * options.
 	 */
-	sp<Test> bindTo(int64_t i, sp<const Opts> opts) const;
+	sp<const Test> bindTo(int64_t i, sp<const Opts> opts) const;
 
 	/**
 	 * Human-friendly test name, with index if an iterated test.
@@ -87,15 +89,20 @@ public:
 	}
 
 	/**
+	 * Check if this test operates on a range
+	 */
+	inline bool isRanged() const
+	{
+		return this->range_low_ != 0 || this->range_high_ != 0;
+	}
+
+	/**
 	 * Range of the test.
 	 */
 	inline std::tuple<bool, int64_t, int64_t> getRange() const
 	{
-		int64_t low = this->range_low_;
-		int64_t high = this->range_high_;
-		bool ranged = high != 0 || low != 0;
-
-		return std::tuple<bool, int64_t, int64_t>(ranged, low, high);
+		return std::tuple<bool, int64_t, int64_t>(
+			this->isRanged(), this->range_low_, this->range_high_);
 	}
 
 	/**

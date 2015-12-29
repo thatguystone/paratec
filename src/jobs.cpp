@@ -29,7 +29,7 @@ static std::string _bin;
  */
 static std::stack<SharedJob *> _jobs;
 
-bool Job::prepRun(sp<const Test> test)
+bool Job::prep(sp<const Test> test)
 {
 	this->test_ = std::move(test);
 	this->sj_->env_->reset(this->test_->name(), this->test_->funcName());
@@ -45,7 +45,13 @@ bool Job::prepRun(sp<const Test> test)
 	return true;
 }
 
-void Job::finishRun()
+void Job::execute()
+{
+	// @todo put benchmark stuff here
+	this->test_->run();
+}
+
+void Job::finish()
 {
 	this->test_->cleanup();
 	this->res_.duration_ = time::toSeconds(time::now() - this->start_);
@@ -78,17 +84,17 @@ void BasicSharedJob::exit(int)
 
 bool BasicJob::run(sp<const Test> test)
 {
-	if (!this->prepRun(std::move(test))) {
+	if (!this->prep(std::move(test))) {
 		return false;
 	}
 
 	_jobs.push(&this->sj_);
 
 	if (setjmp(this->sj_.jmp_) == 0) {
-		this->test_->run();
+		this->execute();
 	}
 
-	this->finishRun();
+	this->finish();
 
 	_jobs.pop();
 
@@ -154,7 +160,7 @@ void ForkingJob::flush(int fd, std::string *to)
 
 bool ForkingJob::run(sp<const Test> test)
 {
-	if (!this->prepRun(std::move(test))) {
+	if (!this->prep(std::move(test))) {
 		return false;
 	}
 
@@ -172,7 +178,7 @@ bool ForkingJob::run(sp<const Test> test)
 	// and it doesn't matter.
 	_jobs.push(&this->sj_);
 
-	this->test_->run();
+	this->execute();
 	this->sj_.exit(0);
 }
 
@@ -209,7 +215,7 @@ void ForkingJob::cleanup()
 	this->res_.stdout_ = std::move(this->stdout_);
 	this->res_.stderr_ = std::move(this->stderr_);
 
-	this->finishRun();
+	this->finish();
 	this->fork_ = nullptr;
 }
 
@@ -272,7 +278,9 @@ Jobs::Jobs(sp<const Opts> opts,
 
 	int i;
 
-	_bin = this->opts_->bin_name_;
+	if (_bin.size() == 0) {
+		_bin = this->opts_->bin_name_;
+	}
 
 	this->jobs_.reserve(jobs);
 	for (i = 0; i < jobs; i++) {

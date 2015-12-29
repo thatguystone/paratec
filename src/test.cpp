@@ -11,7 +11,7 @@
 namespace pt
 {
 
-sp<Test> Test::bindTo(int64_t i, sp<const Opts> opts) const
+sp<const Test> Test::bindTo(int64_t i, sp<const Opts> opts) const
 {
 	void *vitem = this->vec_ == nullptr ? nullptr : ((char *)this->vec_);
 	auto test = mksp<Test>(static_cast<const _paratec &>(*this), i, vitem);
@@ -19,10 +19,9 @@ sp<Test> Test::bindTo(int64_t i, sp<const Opts> opts) const
 	test->opts_ = std::move(opts);
 
 	for (const auto &f : test->opts_->filter_.filts_) {
-		bool matches = strstr(test->name(), f.f_.c_str()) == test->name();
-
+		bool matches = strstr(test->name(), f.c_str()) == test->name();
 		if (matches) {
-			test->enabled_ = f.neg_;
+			test->enabled_ = !f.neg_;
 		}
 	}
 

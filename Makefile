@@ -1,7 +1,7 @@
 NAME = libparatec
 SOVERSION = 0
 
-export PTBENCH = 1
+export PTFILTER += ,-_,
 
 all:: $(SONAME) $(A) $(PC)
 

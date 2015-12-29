@@ -136,6 +136,11 @@ public:
 		F(bool neg, std::string f) : neg_(neg), f_(std::move(f))
 		{
 		}
+
+		const char *c_str() const
+		{
+			return this->f_.c_str();
+		}
 	};
 
 	std::vector<F> filts_;
@@ -256,19 +261,26 @@ public:
 		return optional_argument;
 	}
 
-	bool allStatuses() const
+	bool passedStatuses() const
 	{
 		return this->v_ >= 1;
 	}
 
-	bool passedOutput() const
+	bool allStatuses() const
 	{
 		return this->v_ >= 2;
+	}
+
+	bool passedOutput() const
+	{
+		return this->v_ >= 3;
 	}
 };
 
 class Opts
 {
+	std::vector<Opt *> getOpts();
+
 	void tryParse(const std::vector<const char *> &args,
 				  const std::vector<Opt *> &opts);
 
@@ -303,6 +315,11 @@ public:
 	PortOpt port_;
 	TimeoutOpt timeout_;
 	VerboseOpt verbose_;
+
+	/**
+	 * Clear all paratec env variables to give a clean slate for testing
+	 */
+	void clearEnv();
 
 	/**
 	 * Expects command-line style args. That is args[0] = binary name,

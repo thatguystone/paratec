@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include "paratec.h"
 #include "opts.hpp"
+#include "util_test.hpp"
 
 namespace pt
 {
@@ -31,7 +32,7 @@ static struct {
 	},
 };
 
-PARATECV(optsVerbose, _verbose)
+TESTV(optsVerbose, _verbose)
 {
 	Opts opts;
 
@@ -39,31 +40,31 @@ PARATECV(optsVerbose, _verbose)
 	pt_eq(opts.verbose_.get(), _t->cnt);
 }
 
-PARATEC(optsFilter)
+TEST(optsFilter)
 {
 }
 
-PARATEC(optsPort)
+TEST(optsPort)
 {
 	Opts opts;
 	opts.parse({ "paratec", "--port", "3333" });
 	pt_feq(opts.port_.get(), 3333);
 }
 
-PARATEC(optsPortError, PTEXIT(1))
+TEST(optsPortError, PTEXIT(1))
 {
 	Opts opts;
 	opts.parse({ "paratec", "--port", "-1" });
 }
 
-PARATEC(optsTimeout)
+TEST(optsTimeout)
 {
 	Opts opts;
 	opts.parse({ "paratec", "-t", "3.3" });
 	pt_feq(opts.timeout_.get(), 3.3);
 }
 
-PARATEC(optsTimeoutError, PTEXIT(1))
+TEST(optsTimeoutError, PTEXIT(1))
 {
 	Opts opts;
 	opts.parse({ "paratec", "-t", "-1" });

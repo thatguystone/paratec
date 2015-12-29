@@ -181,7 +181,9 @@ void Results::record(const TestEnv &ti, Result r)
 	this->finished_++;
 	this->tests_duration_ += r.duration_;
 
-	if (r.passed_) {
+	if (!r.enabled()) {
+		// Skip all tallying
+	} else if (r.passed_) {
 		summary = '.';
 		this->passes_++;
 	} else if (r.skipped_) {
@@ -212,6 +214,17 @@ void Results::record(const TestEnv &ti, Result r)
 	if (this->done()) {
 		this->end_ = time::now();
 	}
+}
+
+Result Results::get(const std::string &name)
+{
+	for (const auto &r : this->results_) {
+		if (r.name_ == name) {
+			return r;
+		}
+	}
+
+	throw Err(-1, "result for %s not found", name.c_str());
 }
 
 void Results::dump()
