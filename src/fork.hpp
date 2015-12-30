@@ -77,8 +77,11 @@ public:
 	Exit run(std::function<void()> fn);
 
 	/**
-	 * Humanely kill the forked process
+	 * Kill the forked process.
+	 *
+	 * @return
+	 *     Output from waitpid.
 	 */
-	void terminate();
+	int terminate(int *status);
 };
 }

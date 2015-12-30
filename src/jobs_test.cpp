@@ -6,7 +6,9 @@
  * http://opensource.org/licenses/MIT
  */
 
+#include <atomic>
 #include <iostream>
+#include <sys/wait.h>
 #include <thread>
 #include "jobs.hpp"
 #include "paratec.hpp"
@@ -46,6 +48,13 @@ TEST(_signalMismatch, PTSIG(5))
 
 TEST(_timeout, PTTIME(.001))
 {
+}
+
+static SharedMem<std::atomic_bool> _sleeping;
+TEST(_sleep)
+{
+	_sleeping->store(true);
+	std::this_thread::sleep_for(std::chrono::seconds(10));
 }
 
 TEST(jobsNoFork)
@@ -108,5 +117,24 @@ TEST(jobsTimeout)
 
 TEST(jobsTerminate)
 {
+	Fork f;
+	int status;
+
+	bool parent = f.fork(false, true);
+	if (!parent) {
+		Main m({ MKTEST(_sleep) });
+		m.run(std::cout, { "paratec" });
+		exit(0);
+	}
+
+	// Wait until the test is firmly asleep before trying to kill.
+	pt_wait_for(_sleeping->load());
+
+	auto err = f.terminate(&status);
+	OSErr(err, {}, "failed to reap child");
+
+	pt_eq(f.pid(), err);
+	pt(WIFSIGNALED(status));
+	pt_eq(WTERMSIG(status), SIGTERM);
 }
 }

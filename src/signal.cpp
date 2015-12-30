@@ -25,7 +25,7 @@ static void _handler(int sig)
 {
 	_jobs->terminate();
 
-	signal(SIGINT, SIG_DFL);
+	signal(sig, SIG_DFL);
 	raise(sig);
 }
 
@@ -37,6 +37,7 @@ void takeover(sp<Jobs> jobs)
 
 	_jobs = std::move(jobs);
 	signal(SIGINT, _handler);
+	signal(SIGTERM, _handler);
 
 #ifdef PT_LINUX
 
@@ -61,6 +62,7 @@ void reset()
 
 	_jobs = nullptr;
 	signal(SIGINT, SIG_DFL);
+	signal(SIGTERM, SIG_DFL);
 
 #ifdef PT_LINUX
 	sigdelset(&_sigset, SIGCHLD);

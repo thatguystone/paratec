@@ -6,10 +6,8 @@
  * http://opensource.org/licenses/MIT
  */
 
-#include <fcntl.h>
 #include <stack>
 #include <sys/file.h>
-#include <sys/mman.h>
 #include <sys/wait.h>
 #include "err.hpp"
 #include "jobs.hpp"
@@ -114,23 +112,6 @@ bool BasicJob::run(sp<const Test> test)
 	return true;
 }
 
-ForkingSharedJob::ForkingSharedJob()
-{
-	this->te_
-		= (TestEnv *)mmap(NULL, sizeof(*this->te_), PROT_READ | PROT_WRITE,
-						  MAP_ANON | MAP_SHARED, -1, 0);
-	OSErr(this->te_ == nullptr ? -1 : 0, {}, "failed to mmap TestEnv");
-
-	this->env_ = this->te_;
-}
-
-ForkingSharedJob::~ForkingSharedJob()
-{
-	if (this->te_ != nullptr) {
-		munmap(this->te_, sizeof(*this->te_));
-	}
-}
-
 void ForkingSharedJob::exit(int status)
 {
 	/*
@@ -225,7 +206,7 @@ void ForkingJob::cleanupStatus(int status)
 void ForkingJob::terminate()
 {
 	if (this->fork_ != nullptr) {
-		this->fork_->terminate();
+		this->fork_->terminate(nullptr);
 	}
 }
 

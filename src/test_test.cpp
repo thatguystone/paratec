@@ -51,6 +51,10 @@ static struct {
 	 .args_ = { "paratec", "--filter=_one,-_one,_one" },
 	 .enabled_ = false,
 	},
+	{
+	 .args_ = { "paratec", "--filter=_one,_two" },
+	 .enabled_ = true,
+	},
 };
 
 TESTV(testFilter, _testFilter)

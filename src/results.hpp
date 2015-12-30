@@ -39,11 +39,6 @@ public:
 	std::string name_;
 
 	/**
-	 * The test passed with no problems
-	 */
-	bool passed_ = false;
-
-	/**
 	 * The test received a signal or exited with a bad status code
 	 */
 	bool error_ = false;

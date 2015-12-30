@@ -6,9 +6,11 @@
  * http://opensource.org/licenses/MIT
  */
 
+#include <chrono>
 #include <fcntl.h>
 #include <poll.h>
 #include <sys/wait.h>
+#include <thread>
 #include "fork.hpp"
 #include "signal.hpp"
 
@@ -127,13 +129,13 @@ bool Fork::fork(bool capture, bool newpgid)
 	if (this->pid_ == 0) {
 		sig::reset();
 
-		if (capture) {
-			pipes.setChild();
-		}
-
 		if (newpgid) {
 			err = setpgid(0, 0);
 			OSErr(err, {}, "could not setpgid");
+		}
+
+		if (capture) {
+			pipes.setChild();
 		}
 
 		return false;
@@ -141,6 +143,16 @@ bool Fork::fork(bool capture, bool newpgid)
 
 	if (capture) {
 		pipes.getParentEnds(&this->stdout_, &this->stderr_);
+	}
+
+	if (newpgid) {
+		// There's a race condition here: calling terminate() before setpgid()
+		// is called does nothing. So wait until the process either (1) dies
+		// or (2) sets it pgid.
+		do {
+			usleep(100);
+			err = getpgid(this->pid_);
+		} while (err != -1 && err != this->pid_);
 	}
 
 	return true;
@@ -187,11 +199,29 @@ Fork::Exit Fork::run(std::function<void()> fn)
 	return std::move(e);
 }
 
-void Fork::terminate()
+int Fork::terminate(int *status)
 {
-	// Send SIGINT first to give the test a chance to cleanup, but be sure
-	// he's dead anyway. SIGKILL to the rescue!
-	killpg(this->pid_, SIGINT);
+	int i;
+	int err;
+	int status_;
+
+	if (status == nullptr) {
+		status = &status_;
+	}
+
+	killpg(this->pid_, SIGTERM);
+
+	for (i = 0; i < 5; i++) {
+		err = waitpid(this->pid_, status, WNOHANG);
+		if (err != 0 && (WIFEXITED(*status) || WIFSIGNALED(*status))) {
+			return err;
+		}
+
+		std::this_thread::sleep_for(std::chrono::microseconds(100));
+	}
+
+	// If the process doesn't end, forcibly terminate
 	killpg(this->pid_, SIGKILL);
+	return waitpid(this->pid_, status, 0);
 }
 }

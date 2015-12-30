@@ -71,24 +71,22 @@ void Result::finalize(const TestEnv &te, sp<const Opts> opts)
 		// Skip so that the fallthrough isn't hit
 	} else if (te.failed_) {
 		this->failed_ = true;
-	} else if (this->test_->signal_num_ != 0) {
-		this->passed_ = this->test_->signal_num_ == this->signal_num_;
-		this->error_ = !this->passed_;
-	} else if (this->test_->exit_status_ != 0) {
-		this->passed_ = this->test_->exit_status_ == this->exit_status_;
-		this->error_ = !this->passed_;
-	} else if (!te.failed_ || (te.failed_ && this->test_->expect_fail_)) {
-		this->passed_ = true;
-	} else {
-		this->error_ = true;
+	} else if (this->signal_num_ != 0 || this->test_->signal_num_ != 0) {
+		this->error_ = this->test_->signal_num_ != this->signal_num_;
+	} else if (this->exit_status_ != 0 || this->test_->exit_status_ != 0) {
+		this->error_ = this->test_->exit_status_ != this->exit_status_;
+	} else if (te.failed_ && !this->test_->expect_fail_) {
+		this->failed_ = true;
 	}
 
-	if (this->passed_ && !v.passedOutput()) {
+	auto passed = this->skipped_
+				  || (!this->failed_ && !this->error_ && !this->timedout_);
+	if (passed && !v.passedOutput()) {
 		this->stdout_.clear();
 		this->stderr_.clear();
 	}
 
-	if (!this->passed_) {
+	if (!passed) {
 		this->fail_msg_ = te.fail_msg_;
 
 		if (*te.last_mark_ != '\0') {
@@ -113,15 +111,6 @@ void Result::dump(std::ostream &os, sp<const Opts> opts) const
 		return;
 	}
 
-	if (this->passed_) {
-		if (v.passedStatuses()) {
-			format(os, INDENT "    PASS : %s (%fs) \n", this->name_.c_str(),
-				   this->duration_);
-		}
-		this->dumpOuts(os, v.passedOutput());
-		return;
-	}
-
 	if (this->skipped_) {
 		if (v.allStatuses()) {
 			format(os, INDENT "    SKIP : %s \n", this->name_.c_str());
@@ -134,7 +123,7 @@ void Result::dump(std::ostream &os, sp<const Opts> opts) const
 		format(os, INDENT "   ERROR : %s (%fs) : after %s : ",
 			   this->name_.c_str(), this->duration_, this->last_line_.c_str());
 
-		if (this->test_->signal_num_ != 0) {
+		if (this->signal_num_ != 0 || this->test_->signal_num_ != 0) {
 			format(os, "received signal (%d) `%s`, expected (%d) `%s`\n",
 				   this->signal_num_, strsignal(this->signal_num_),
 				   this->test_->signal_num_,
@@ -169,6 +158,12 @@ void Result::dump(std::ostream &os, sp<const Opts> opts) const
 		this->dumpOuts(os, v.passedOutput());
 		return;
 	}
+
+	if (v.passedStatuses()) {
+		format(os, INDENT "    PASS : %s (%fs) \n", this->name_.c_str(),
+			   this->duration_);
+	}
+	this->dumpOuts(os, v.passedOutput());
 }
 
 void Results::startTimer()
@@ -195,9 +190,6 @@ void Results::record(const TestEnv &ti, Result r)
 
 	if (!r.enabled()) {
 		// Skip all tallying
-	} else if (r.passed_) {
-		summary = '.';
-		this->passes_++;
 	} else if (r.skipped_) {
 		summary = 'S';
 		this->skipped_++;
@@ -210,6 +202,9 @@ void Results::record(const TestEnv &ti, Result r)
 	} else if (r.timedout_) {
 		summary = 'T';
 		this->failures_++;
+	} else {
+		summary = '.';
+		this->passes_++;
 	}
 
 	this->results_.push_back(std::move(r));

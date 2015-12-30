@@ -16,6 +16,7 @@
 #include "results.hpp"
 #include "test.hpp"
 #include "time.hpp"
+#include "util.hpp"
 
 namespace pt
 {
@@ -131,26 +132,13 @@ public:
 
 class ForkingSharedJob : public SharedJob
 {
-	TestEnv *te_ = nullptr;
+	SharedMem<TestEnv> shm_;
 
 public:
-	ForkingSharedJob();
-
-	/**
-	 * Let's not copy an mmap'd segment
-	 */
-	ForkingSharedJob(const ForkingSharedJob &) = delete;
-
-	/**
-	 * It's cool to move this, though
-	 */
-	ForkingSharedJob(ForkingSharedJob &&o)
+	ForkingSharedJob()
 	{
-		this->te_ = o.te_;
-		o.te_ = nullptr;
+		this->env_ = this->shm_.get();
 	}
-
-	~ForkingSharedJob() override;
 
 	[[noreturn]] void exit(int status) override;
 };
