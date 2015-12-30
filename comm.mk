@@ -13,6 +13,8 @@ ifeq ($(LLVM),llvm)
 	CC = clang
 	CXX = clang++
 	export GCOV = llvm-cov
+else
+	undefine GCOV
 endif
 
 #
