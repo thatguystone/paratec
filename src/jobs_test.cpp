@@ -48,6 +48,7 @@ TEST(_signalMismatch, PTSIG(5))
 
 TEST(_timeout, PTTIME(.001))
 {
+	std::this_thread::sleep_for(std::chrono::seconds(10));
 }
 
 static SharedMem<std::atomic_bool> _sleeping;
@@ -67,9 +68,15 @@ TEST(jobsNoFork)
 	pt_ss(e.stdout_.c_str(), "Running: _0\n=========");
 }
 
-TEST(jobsAbortSignal, PTSIG(6))
+TEST(jobsNoForkFiltered)
 {
-	abort();
+	auto e = Fork().run([]() {
+		Main m({ MKTEST(_0), MKTEST(_1), MKTEST(_2), MKTEST(_3) });
+		m.run(std::cout, { "paratec", "--nofork", "-f", "_2" });
+	});
+
+	pt_ss(e.stdout_.c_str(), "Running: _2");
+	pt_ss(e.stdout_.c_str(), "100%: of 1");
 }
 
 TEST(jobsNoForkThreadedAssertion)
@@ -91,6 +98,21 @@ TEST(jobsFork)
 
 	auto s = out.str();
 	pt_ss(s.c_str(), "100%");
+}
+
+TEST(jobsForkFiltered)
+{
+	auto e = Fork().run([]() {
+		Main m({ MKTEST(_0), MKTEST(_1), MKTEST(_2), MKTEST(_3) });
+		m.run(std::cout, { "paratec", "-f", "_2" });
+	});
+
+	pt_ss(e.stdout_.c_str(), "100%: of 1");
+}
+
+TEST(jobsAbortSignal, PTSIG(6))
+{
+	abort();
 }
 
 TEST(jobsSignal)
@@ -115,7 +137,7 @@ TEST(jobsTimeout)
 	pt_ss(s.c_str(), "TIME OUT : _timeout");
 }
 
-TEST(jobsTerminate)
+TEST(jobsTerminateFromSignal)
 {
 	Fork f;
 	int status;
