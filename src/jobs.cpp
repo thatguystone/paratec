@@ -36,7 +36,7 @@ bool Job::prep(sp<const Test> test)
 	this->res_.reset(this->test_);
 
 	if (!this->test_->enabled()) {
-		this->recordResult();
+		this->finish();
 		return false;
 	}
 
@@ -53,10 +53,12 @@ void Job::execute()
 
 void Job::finish()
 {
-	this->test_->cleanup();
-	this->res_.duration_ = time::toSeconds(time::now() - this->start_);
-	this->recordResult();
+	if (this->test_->enabled()) {
+		this->test_->cleanup();
+		this->res_.duration_ = time::toSeconds(time::now() - this->start_);
+	}
 
+	this->recordResult();
 	this->test_ = nullptr;
 }
 
@@ -84,6 +86,8 @@ void BasicSharedJob::exit(int)
 
 bool BasicJob::run(sp<const Test> test)
 {
+	std::string underline;
+
 	if (!this->prep(std::move(test))) {
 		return false;
 	}
@@ -91,10 +95,19 @@ bool BasicJob::run(sp<const Test> test)
 	_jobs.push(&this->sj_);
 
 	if (setjmp(this->sj_.jmp_) == 0) {
+		std::string head("Running: ");
+		head += this->test_->name();
+		underline
+			= std::move(std::string(std::max(head.size(), (size_t)70), '='));
+
+		printf("%s\n", head.c_str());
+		printf("%s\n\n", underline.c_str());
 		this->execute();
 	}
 
 	this->finish();
+
+	printf("\n%s\n", underline.c_str());
 
 	_jobs.pop();
 
@@ -139,25 +152,6 @@ void ForkingSharedJob::exit(int status)
 	::exit(status);
 }
 
-void ForkingJob::flush(int fd, std::string *to)
-{
-	ssize_t err;
-	char buff[4096];
-
-	if (fd == -1) {
-		return;
-	}
-
-	do {
-		err = read(fd, buff, sizeof(buff));
-		OSErr(err, { EAGAIN, EWOULDBLOCK }, "failed to read from subprocess");
-
-		if (err > 0) {
-			to->append(buff, err);
-		}
-	} while (err == sizeof(buff));
-}
-
 bool ForkingJob::run(sp<const Test> test)
 {
 	if (!this->prep(std::move(test))) {
@@ -166,7 +160,7 @@ bool ForkingJob::run(sp<const Test> test)
 
 	this->fork_ = mksp<Fork>();
 
-	bool parent = this->fork_->fork(this->opts_->capture_);
+	bool parent = this->fork_->fork(this->opts_->capture_, true);
 
 	if (parent) {
 		this->timeout_after_ = this->start_
@@ -185,12 +179,9 @@ bool ForkingJob::run(sp<const Test> test)
 void ForkingJob::flushPipes()
 {
 	// This job might not have a running test. So skip flushing.
-	if (this->fork_ == nullptr) {
-		return;
+	if (this->fork_ != nullptr) {
+		this->fork_->flushPipes();
 	}
-
-	this->flush(this->fork_->stdout(), &this->stdout_);
-	this->flush(this->fork_->stderr(), &this->stderr_);
 }
 
 bool ForkingJob::checkTimeout(time::point now)
@@ -212,8 +203,9 @@ bool ForkingJob::checkTimeout(time::point now)
 void ForkingJob::cleanup()
 {
 	this->flushPipes();
-	this->res_.stdout_ = std::move(this->stdout_);
-	this->res_.stderr_ = std::move(this->stderr_);
+	if (this->fork_ != nullptr) {
+		this->fork_->moveOuts(&this->res_.stdout_, &this->res_.stderr_);
+	}
 
 	this->finish();
 	this->fork_ = nullptr;
@@ -364,6 +356,9 @@ void pt_fail_(const char *format, ...)
 
 	job->env_->failed_ = true;
 	job->exit(255);
+
+	// g++ isn't convinced this is function is noreturn otherwise...
+	abort();
 }
 
 void pt_mark_(const char *file, const char *func, const size_t line)

@@ -41,11 +41,11 @@ public:
 	/**
 	 * Run from the command line, taking over the entire environment
 	 */
-	Results main(int argc, char **argv);
+	Results main(std::ostream &os, int argc, char **argv);
 
 	/**
 	 * Run the tests with the given arguments.
 	 */
-	Results run(const std::vector<const char *> &args);
+	Results run(std::ostream &os, const std::vector<const char *> &args);
 };
 }

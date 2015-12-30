@@ -7,6 +7,7 @@
  */
 
 #include "opts.hpp"
+#include "util.hpp"
 #include "util_test.hpp"
 
 namespace pt
@@ -14,5 +15,18 @@ namespace pt
 void util_setup()
 {
 	Opts().clearEnv();
+}
+
+TEST(utilFormat)
+{
+	std::stringstream out;
+	char buff[8192];
+
+	memset(buff, 'a', sizeof(buff));
+	buff[sizeof(buff) - 1] = '\0';
+
+	format(out, "%s", buff);
+
+	pt_eq(strlen(buff), out.str().size());
 }
 }

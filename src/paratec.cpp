@@ -48,7 +48,7 @@ Main::Main()
 	}
 }
 
-Results Main::main(int argc, char **argv)
+Results Main::main(std::ostream &os, int argc, char **argv)
 {
 	int i;
 	std::vector<const char *> args;
@@ -57,7 +57,7 @@ Results Main::main(int argc, char **argv)
 		args.push_back(argv[i]);
 	}
 
-	return this->run(args);
+	return this->run(os, args);
 }
 
 Main::~Main()
@@ -65,13 +65,13 @@ Main::~Main()
 	sig::reset();
 }
 
-Results Main::run(const std::vector<const char *> &args)
+Results Main::run(std::ostream &os, const std::vector<const char *> &args)
 {
 	int err;
 	std::vector<sp<const Test>> tests;
 
 	this->opts_->parse(std::move(args));
-	auto rslts = mksp<Results>(this->opts_);
+	auto rslts = mksp<Results>(this->opts_, os);
 
 	auto addTest = [&](sp<const Test> t) {
 		rslts->inc(t->enabled());
@@ -110,10 +110,12 @@ Results Main::run(const std::vector<const char *> &args)
 		jobs->run();
 	} else {
 		rslts->startTimer();
-		for (auto &test : this->tests_) {
+		for (auto &test : tests) {
 			BasicJob(this->opts_, rslts).run(test);
 		}
 	}
+
+	rslts->dump();
 
 	return *rslts;
 }

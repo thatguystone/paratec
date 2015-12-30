@@ -7,7 +7,6 @@
  */
 
 #include <stdlib.h>
-#include "paratec.h"
 #include "opts.hpp"
 #include "util_test.hpp"
 
@@ -69,6 +68,4 @@ TEST(optsTimeoutError, PTEXIT(1))
 	Opts opts;
 	opts.parse({ "paratec", "-t", "-1" });
 }
-
-// @todo test negative int/dbl values
 }

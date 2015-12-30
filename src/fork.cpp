@@ -7,6 +7,7 @@
  */
 
 #include <fcntl.h>
+#include <poll.h>
 #include <sys/wait.h>
 #include "fork.hpp"
 #include "signal.hpp"
@@ -88,7 +89,34 @@ Fork::~Fork()
 	}
 }
 
-bool Fork::fork(bool capture)
+bool Fork::flush(int fd, std::string *s)
+{
+	ssize_t err;
+	char buff[4096];
+
+	do {
+		err = read(fd, buff, sizeof(buff));
+		OSErr(err, { EAGAIN, EWOULDBLOCK }, "failed to read from subprocess");
+
+		if (err > 0) {
+			s->append(buff, err);
+		}
+	} while (err == sizeof(buff));
+
+	return err != 0;
+}
+
+bool Fork::flushPipes()
+{
+	bool flushed;
+
+	flushed = this->flush(this->stdout_, &this->out_);
+	flushed |= this->flush(this->stderr_, &this->err_);
+
+	return flushed;
+}
+
+bool Fork::fork(bool capture, bool newpgid)
 {
 	int err;
 	_Pipes pipes(capture);
@@ -103,8 +131,10 @@ bool Fork::fork(bool capture)
 			pipes.setChild();
 		}
 
-		err = setpgid(0, 0);
-		OSErr(err, {}, "could not setpgid");
+		if (newpgid) {
+			err = setpgid(0, 0);
+			OSErr(err, {}, "could not setpgid");
+		}
 
 		return false;
 	}
@@ -114,6 +144,47 @@ bool Fork::fork(bool capture)
 	}
 
 	return true;
+}
+
+Fork::Exit Fork::run(std::function<void()> fn)
+{
+	int status;
+	bool parent = this->fork(true, false);
+
+	if (!parent) {
+		fn();
+		exit(0);
+	}
+
+	auto closed = false;
+	while (!closed) {
+		pollfd pfds[] = {
+			{
+			 .fd = this->stdout_, .events = POLLIN, .revents = 0,
+			},
+			{
+			 .fd = this->stderr_, .events = POLLIN, .revents = 0,
+			},
+		};
+
+		auto err = poll(pfds, 2, -1);
+		OSErr(err, {}, "failed to poll child pipes");
+
+		closed = !this->flushPipes();
+	}
+
+	auto err = waitpid(this->pid_, &status, 0);
+	OSErr(err, {}, "failed to reap child");
+
+	this->flushPipes();
+
+	Fork::Exit e;
+	e.status_ = WIFEXITED(status) ? WEXITSTATUS(status) : 0;
+	e.signal_ = WIFSIGNALED(status) ? WTERMSIG(status) : 0;
+	e.stdout_ = std::move(this->out_);
+	e.stderr_ = std::move(this->err_);
+
+	return std::move(e);
 }
 
 void Fork::terminate()

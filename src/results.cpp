@@ -12,6 +12,7 @@
 #include <string.h>
 #include <string>
 #include "results.hpp"
+#include "util.hpp"
 
 namespace pt
 {
@@ -25,34 +26,36 @@ void Result::reset(sp<const Test> test)
 	this->start_ = time::now();
 }
 
-void Result::dumpOuts(bool print) const
+void Result::dumpOuts(std::ostream &os, bool print) const
 {
 	if (!print) {
 		return;
 	}
 
-	this->dumpOut("stdout", this->stdout_);
-	this->dumpOut("stderr", this->stderr_);
+	this->dumpOut(os, "stdout", this->stdout_);
+	this->dumpOut(os, "stderr", this->stderr_);
 
 	if (this->stdout_.size() > 0 || this->stderr_.size() > 0) {
-		printf("\n");
+		format(os, "\n");
 	}
 }
 
-void Result::dumpOut(const char *which, const std::string &s) const
+void Result::dumpOut(std::ostream &os,
+					 const char *which,
+					 const std::string &s) const
 {
 	if (s.size() == 0) {
 		return;
 	}
 
-	printf(INDENT INDENT INDENT "%s\n", which);
+	format(os, INDENT INDENT INDENT "%s\n", which);
 
 	std::string l;
 	std::istringstream is(s);
 	while (std::getline(is, l)) {
-		fwrite(STDPREFIX, strlen(STDPREFIX), 1, stdout);
-		fwrite(l.c_str(), l.size(), 1, stdout);
-		fwrite("\n", 1, 1, stdout);
+		os.write(STDPREFIX, strlen(STDPREFIX));
+		os.write(l.c_str(), l.size());
+		os.put('\n');
 	}
 }
 
@@ -66,10 +69,16 @@ void Result::finalize(const TestEnv &te, sp<const Opts> opts)
 		this->skipped_ = true;
 	} else if (this->timedout_) {
 		// Skip so that the fallthrough isn't hit
-	} else if (!te.failed_ || (te.failed_ && this->test_->expect_fail_)) {
-		this->passed_ = true;
 	} else if (te.failed_) {
 		this->failed_ = true;
+	} else if (this->test_->signal_num_ != 0) {
+		this->passed_ = this->test_->signal_num_ == this->signal_num_;
+		this->error_ = !this->passed_;
+	} else if (this->test_->exit_status_ != 0) {
+		this->passed_ = this->test_->exit_status_ == this->exit_status_;
+		this->error_ = !this->passed_;
+	} else if (!te.failed_ || (te.failed_ && this->test_->expect_fail_)) {
+		this->passed_ = true;
 	} else {
 		this->error_ = true;
 	}
@@ -93,68 +102,71 @@ void Result::finalize(const TestEnv &te, sp<const Opts> opts)
 	}
 }
 
-void Result::dump(sp<const Opts> opts) const
+void Result::dump(std::ostream &os, sp<const Opts> opts) const
 {
 	const auto &v = opts->verbose_;
 
-	if (!this->test_->enabled()) {
+	if (!this->enabled()) {
 		if (v.allStatuses()) {
-			printf(INDENT "DISABLED : %s \n", this->name_.c_str());
+			format(os, INDENT "DISABLED : %s \n", this->name_.c_str());
 		}
 		return;
 	}
 
 	if (this->passed_) {
-		if (v.allStatuses()) {
-			printf(INDENT "    PASS : %s (%fs) \n", this->name_.c_str(),
+		if (v.passedStatuses()) {
+			format(os, INDENT "    PASS : %s (%fs) \n", this->name_.c_str(),
 				   this->duration_);
 		}
-		this->dumpOuts(v.passedOutput());
+		this->dumpOuts(os, v.passedOutput());
 		return;
 	}
 
 	if (this->skipped_) {
 		if (v.allStatuses()) {
-			printf(INDENT "    SKIP : %s \n", this->name_.c_str());
+			format(os, INDENT "    SKIP : %s \n", this->name_.c_str());
 		}
-		this->dumpOuts(v.passedOutput());
+		this->dumpOuts(os, v.passedOutput());
 		return;
 	}
 
 	if (this->error_) {
-		printf(INDENT "   ERROR : %s (%fs) : after %s : ", this->name_.c_str(),
-			   this->duration_, this->last_line_.c_str());
+		format(os, INDENT "   ERROR : %s (%fs) : after %s : ",
+			   this->name_.c_str(), this->duration_, this->last_line_.c_str());
 
-		if (this->signal_num_ != 0) {
-			printf("received signal(%d) `%s`\n", this->signal_num_,
-				   strsignal(this->signal_num_));
+		if (this->test_->signal_num_ != 0) {
+			format(os, "received signal (%d) `%s`, expected (%d) `%s`\n",
+				   this->signal_num_, strsignal(this->signal_num_),
+				   this->test_->signal_num_,
+				   strsignal(this->test_->signal_num_));
 		} else {
-			printf("exit code=%d\n", this->exit_status_);
+			format(os, "got exit code=%d, expected %d\n", this->exit_status_,
+				   this->test_->exit_status_);
 		}
 
-		this->dumpOuts(true);
+		this->dumpOuts(os, true);
 		return;
 	}
 
 	if (this->failed_) {
-		printf(INDENT "    FAIL : %s (%fs) : %s : %s\n", this->name_.c_str(),
-			   this->duration_, this->last_line_.c_str(),
+		format(os, INDENT "    FAIL : %s (%fs) : %s : %s\n",
+			   this->name_.c_str(), this->duration_, this->last_line_.c_str(),
 			   this->fail_msg_.c_str());
-		this->dumpOuts(true);
+		this->dumpOuts(os, true);
 		return;
 	}
 
 	if (this->timedout_) {
-		printf(INDENT "TIME OUT : %s (%fs) : after %s\n", this->name_.c_str(),
-			   this->duration_, this->last_line_.c_str());
-		this->dumpOuts(true);
+		format(os, INDENT "TIME OUT : %s (%fs) : after %s\n",
+			   this->name_.c_str(), this->duration_, this->last_line_.c_str());
+		this->dumpOuts(os, true);
 		return;
 	}
 
 	if (this->test_->bench_) {
-		printf(INDENT "   BENCH : %s (%'" PRIu64 " @ %'" PRIu64 " ns/op)\n",
+		format(os, INDENT "   BENCH : %s (%'" PRIu64 " @ %'" PRIu64 " ns/op)\n",
 			   this->name_.c_str(), this->bench_iters_, this->bench_ns_op_);
-		this->dumpOuts(v.passedOutput());
+		this->dumpOuts(os, v.passedOutput());
 		return;
 	}
 }
@@ -203,11 +215,13 @@ void Results::record(const TestEnv &ti, Result r)
 	this->results_.push_back(std::move(r));
 
 	if (this->opts_->fork_ && this->opts_->capture_) {
-		printf("%c", summary);
-		fflush(stdout);
+		if (summary != '\0') {
+			format(this->os_, "%c", summary);
+			this->os_.flush();
+		}
 
 		if (this->done()) {
-			printf("\n");
+			format(this->os_, "\n");
 		}
 	}
 
@@ -231,19 +245,19 @@ void Results::dump()
 {
 	std::sort(this->results_.begin(), this->results_.end());
 
-	printf("%d%%: ",
+	format(this->os_, "%d%%: ",
 		   this->enabled_ == 0 ? 100 : (int)(((double)this->passes_
 											  / this->enabled_) * 100));
-	printf("of %zu tests run, ", this->enabled_);
-	printf("%zu OK, ", this->passes_);
-	printf("%zu errors, ", this->errors_);
-	printf("%zu failures, ", this->failures_);
-	printf("%zu skipped. ", this->skipped_);
-	printf("Ran in %fs (tests used %fs)\n",
+	format(this->os_, "of %zu tests run, ", this->enabled_);
+	format(this->os_, "%zu OK, ", this->passes_);
+	format(this->os_, "%zu errors, ", this->errors_);
+	format(this->os_, "%zu failures, ", this->failures_);
+	format(this->os_, "%zu skipped. ", this->skipped_);
+	format(this->os_, "Ran in %fs (tests used %fs)\n",
 		   time::toSeconds(this->end_ - this->start_), this->tests_duration_);
 
 	for (const auto &r : this->results_) {
-		r.dump(this->opts_);
+		r.dump(this->os_, this->opts_);
 	}
 }
 }

@@ -34,10 +34,16 @@ template <> void TypedOpt<int>::parse(std::string arg)
 {
 	try {
 		this->set(std::stoi(arg));
+		if (this->get() < 0) {
+			Err(-1, "%s: `%s` must not be less than 0", this->name_.c_str(),
+				arg.c_str());
+		}
 	} catch (std::invalid_argument) {
-		Err(-1, "`%s` could not be parsed to an integer", arg.c_str());
+		Err(-1, "%s: `%s` could not be parsed to an integer",
+			this->name_.c_str(), arg.c_str());
 	} catch (std::out_of_range) {
-		Err(-1, "`%s` is too large to be an integer", arg.c_str());
+		Err(-1, "%s: `%s` is too large to be an integer", this->name_.c_str(),
+			arg.c_str());
 	}
 }
 
@@ -47,12 +53,15 @@ template <> void TypedOpt<double>::parse(std::string arg)
 		this->set(std::stod(arg));
 
 		if (this->get() < 0) {
-			Err(-1, "`%s` must not be less than 0", arg.c_str());
+			Err(-1, "%s: `%s` must not be less than 0", this->name_.c_str(),
+				arg.c_str());
 		}
 	} catch (std::invalid_argument) {
-		Err(-1, "`%s` could not be parsed to a double", arg.c_str());
+		Err(-1, "%s: `%s` could not be parsed to a double", this->name_.c_str(),
+			arg.c_str());
 	} catch (std::out_of_range) {
-		Err(-1, "`%s` is too large to be a double", arg.c_str());
+		Err(-1, "%s: `%s` is too large to be a double", this->name_.c_str(),
+			arg.c_str());
 	}
 }
 
@@ -92,7 +101,7 @@ void FilterOpt::parse(std::string args)
 
 void HelpOpt::parse(std::string)
 {
-	Err(-1, "");
+	Err(-1, "show help");
 }
 
 void HelpOpt::usage(const std::vector<const char *> &args,
@@ -179,8 +188,9 @@ void Opts::tryParse(const std::vector<const char *> &args,
 
 	optind = 1;
 	while (1) {
-		char c = getopt_long(args.size(), (char *const *)args.data(),
-							 optstr.c_str(), lopts, NULL);
+		char c
+			= getopt_long(args.size(), const_cast<char *const *>(args.data()),
+						  optstr.c_str(), lopts, NULL);
 		if (c == -1) {
 			break;
 		}
@@ -198,7 +208,7 @@ void Opts::tryParse(const std::vector<const char *> &args,
 		}
 
 		if (!found) {
-			Err(-1, "");
+			Err(-1, "show help");
 		}
 	}
 }

@@ -1,4 +1,5 @@
 /**
+ * @file
  * @author Andrew Stone <a@stoney.io>
  * @copyright 2015 Andrew Stone
  *
@@ -6,11 +7,13 @@
  * http://opensource.org/licenses/MIT
  */
 
+#pragma once
 #include <iostream>
-#include "paratec.hpp"
+#include "std.hpp"
 
-int main(int argc, char **argv)
+namespace pt
 {
-	auto res = pt::Main().main(std::cout, argc, argv);
-	return res.exitCode();
+
+PRINTF(2, 3)
+void format(std::ostream &os, const char *format, ...);
 }

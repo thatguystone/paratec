@@ -8,6 +8,8 @@
  */
 
 #pragma once
+#include <sstream>
+#include "paratec.h"
 
 #define TEST(name, ...) PARATEC(name, PTUP(util_setup), ##__VA_ARGS__)
 

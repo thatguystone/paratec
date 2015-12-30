@@ -1,7 +1,7 @@
 NAME = libparatec
 SOVERSION = 0
 
-export PTFILTER += ,-_,
+export override PTFILTER += ,-_,
 
 all:: $(SONAME) $(A) $(PC)
 

@@ -6,8 +6,8 @@
  * http://opensource.org/licenses/MIT
  */
 
-#include "paratec.h"
 #include "paratec.hpp"
+#include "util_test.hpp"
 
 namespace pt
 {

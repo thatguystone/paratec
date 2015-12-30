@@ -6,7 +6,6 @@
  * http://opensource.org/licenses/MIT
  */
 
-#include "paratec.h"
 #include "test.hpp"
 #include "util_test.hpp"
 

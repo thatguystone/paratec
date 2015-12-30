@@ -6,7 +6,6 @@
  * http://opensource.org/licenses/MIT
  */
 
-#include "paratec.h"
 #include "paratec.hpp"
 #include "test.hpp"
 #include "util_test.hpp"
@@ -50,7 +49,7 @@ static struct {
 	},
 	{
 	 .args_ = { "paratec", "--filter=_one,-_one,_one" },
-	 .enabled_ = true,
+	 .enabled_ = false,
 	},
 };
 

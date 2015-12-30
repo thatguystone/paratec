@@ -168,12 +168,6 @@ class ForkingJob : public Job
 	sp<Fork> fork_;
 
 	/**
-	 * Captured output from the forked process
-	 */
-	std::string stdout_;
-	std::string stderr_;
-
-	/**
 	 * When the test should time out at
 	 */
 	time::point timeout_after_;

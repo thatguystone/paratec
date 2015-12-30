@@ -27,8 +27,9 @@ class Result
 	sp<const Test> test_;
 	time::point start_;
 
-	void dumpOuts(bool print) const;
-	void dumpOut(const char *which, const std::string &s) const;
+	void dumpOuts(std::ostream &os, bool print) const;
+	void
+	dumpOut(std::ostream &os, const char *which, const std::string &s) const;
 
 public:
 	/**
@@ -132,7 +133,7 @@ public:
 	/**
 	 * Print a summary of this result
 	 */
-	void dump(sp<const Opts> opts) const;
+	void dump(std::ostream &os, sp<const Opts> opts) const;
 };
 
 /**
@@ -152,10 +153,15 @@ class Results
 	time::point end_;
 
 	sp<Opts> opts_;
+	std::ostream &os_;
 	std::vector<Result> results_;
 
 public:
-	Results(sp<Opts> opts) : opts_(std::move(opts))
+	/**
+	 * I don't like that this uses a reference, but C++ was fighting me on
+	 * this.
+	 */
+	Results(sp<Opts> opts, std::ostream &os) : opts_(std::move(opts)), os_(os)
 	{
 	}
 
