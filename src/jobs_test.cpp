@@ -33,6 +33,29 @@ TEST(_3)
 {
 }
 
+TEST(_fail)
+{
+	pt_fail("failure");
+}
+
+TEST(_error)
+{
+	abort();
+}
+
+TEST(_skip)
+{
+	pt_skip();
+}
+
+TEST(_port)
+{
+	auto p = pt_get_port(0);
+
+	pt_gt(p, 0);
+	pt_gt(pt_get_port(1), p);
+}
+
 TEST(_threadedAssertion)
 {
 	std::thread th([]() { pt_fail("from another thread"); });
@@ -158,5 +181,110 @@ TEST(jobsTerminateFromSignal)
 	pt_eq(f.pid(), err);
 	pt(WIFSIGNALED(status));
 	pt_eq(WTERMSIG(status), SIGTERM);
+}
+
+static void _fail(bool fork)
+{
+	std::stringstream out;
+	std::vector<const char *> args({ "paratec", "-vvv" });
+
+	if (!fork) {
+		args.push_back("--nofork");
+	}
+
+	Main m({ MKTEST(_fail) });
+	m.run(out, args);
+
+	auto s = out.str();
+	pt_ss(s.c_str(), "FAIL : _fail");
+	pt_ss(s.c_str(), "0%: of 1");
+	pt_ss(s.c_str(), "1 failures");
+}
+
+TEST(jobsForkFail)
+{
+	_fail(true);
+}
+
+TEST(jobsNoForkFail)
+{
+	_fail(false);
+}
+
+// This can only run in a forked env since it calls exit()
+TEST(jobsError)
+{
+	std::stringstream out;
+
+	Main m({ MKTEST(_error) });
+	m.run(out, { "paratec", "-vvv" });
+
+	auto s = out.str();
+	pt_ss(s.c_str(), "ERROR : _error");
+	pt_ss(s.c_str(), "0%: of 1");
+	pt_ss(s.c_str(), "1 errors");
+}
+
+static void _skip(bool fork)
+{
+	std::stringstream out;
+	std::vector<const char *> args({ "paratec", "-vvv" });
+
+	if (!fork) {
+		args.push_back("--nofork");
+	}
+
+	Main m({ MKTEST(_0), MKTEST(_skip) });
+	m.run(out, args);
+
+	auto s = out.str();
+	pt_ss(s.c_str(), "SKIP : _skip");
+	pt_ss(s.c_str(), "100%: of 1");
+	pt_ss(s.c_str(), "1 skipped");
+}
+
+TEST(jobsForkSkip)
+{
+	_skip(true);
+}
+
+TEST(jobsNoForkSkip)
+{
+	_skip(false);
+}
+
+static void _getPort(bool fork)
+{
+	std::vector<const char *> args({ "paratec" });
+	if (!fork) {
+		args.push_back("--nofork");
+	}
+
+	Main m({ MKTEST(_port), MKTEST(_port), MKTEST(_port) });
+	auto res = m.run(std::cout, args);
+
+	pt_eq(res.exitCode(), 0);
+}
+
+TEST(jobsForkGetPort)
+{
+	_getPort(true);
+}
+
+TEST(jobsNoForkGetPort)
+{
+	_getPort(false);
+}
+
+TEST(jobsGetCppName)
+{
+	pt_seq("jobsGetCppName", pt_get_name());
+}
+
+extern "C" {
+TEST(jobsGetCName)
+{
+	pt_seq("jobsGetCName", pt_get_name());
+}
 }
 }

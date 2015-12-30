@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <string.h>
 #include "err.hpp"
+#include "util.hpp"
 
 namespace pt
 {
@@ -17,24 +18,27 @@ Err::Err(int err, const char *format, ...)
 {
 	va_list args;
 	va_start(args, format);
+	DTor d([&]() { va_end(args); });
+
 	this->vset(err, format, args);
-	va_end(args);
 }
 
 Err::Err(int err, const char *format, va_list args)
 {
 	va_list cpy;
 	va_copy(cpy, args);
+	DTor d([&]() { va_end(cpy); });
+
 	this->vset(err, format, cpy);
-	va_end(cpy);
 }
 
 void Err::set(int err, const char *format, ...)
 {
 	va_list args;
 	va_start(args, format);
+	DTor d([&]() { va_end(args); });
+
 	this->vset(err, format, args);
-	va_end(args);
 }
 
 void Err::vset(int err, const char *format, va_list args)
@@ -66,8 +70,9 @@ OSErr::OSErr(int err,
 
 	va_list args;
 	va_start(args, format);
+	DTor d([&]() { va_end(args); });
+
 	this->vset(err, eno, std::move(allowed_errnos), format, args);
-	va_end(args);
 }
 
 OSErr::OSErr(int err,
@@ -79,8 +84,9 @@ OSErr::OSErr(int err,
 
 	va_list cpy;
 	va_copy(cpy, args);
+	DTor d([&]() { va_end(cpy); });
+
 	this->vset(err, eno, std::move(allowed_errnos), format, cpy);
-	va_end(cpy);
 }
 
 void OSErr::vset(int err,

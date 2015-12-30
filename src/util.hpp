@@ -20,6 +20,24 @@ PRINTF(2, 3)
 void format(std::ostream &os, const char *format, ...);
 
 /**
+ * Call a function on scope exit.
+ */
+class DTor
+{
+	std::function<void()> cb_;
+
+public:
+	DTor(std::function<void()> cb) : cb_(std::move(cb))
+	{
+	}
+
+	~DTor()
+	{
+		this->cb_();
+	}
+};
+
+/**
  * This only works for primitive types, fixed-sized primitive arrays, and
  * structs of those.
  */

@@ -12,6 +12,14 @@
 namespace pt
 {
 
+// @todo implement C++-style asserts for everything
+template <typename T> void eq(T a, T b)
+{
+	if (a != b) {
+		pt_fail("nope");
+	}
+}
+
 // @todo test vector test with 0 items (should not execute at all)
 // @todo test calling run on same pt::Main() multiple times.
 }

@@ -192,6 +192,7 @@ void Results::record(const TestEnv &ti, Result r)
 		// Skip all tallying
 	} else if (r.skipped_) {
 		summary = 'S';
+		this->enabled_--;
 		this->skipped_++;
 	} else if (r.error_) {
 		summary = 'E';

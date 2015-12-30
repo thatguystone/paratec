@@ -30,7 +30,8 @@ static std::stack<SharedJob *> _jobs;
 bool Job::prep(sp<const Test> test)
 {
 	this->test_ = std::move(test);
-	this->sj_->env_->reset(this->test_->name(), this->test_->funcName());
+	this->sj_->env_->reset(this->id_, this->test_->name(),
+						   this->test_->funcName());
 	this->res_.reset(this->test_);
 
 	if (!this->test_->enabled()) {
@@ -257,7 +258,7 @@ Jobs::Jobs(sp<const Opts> opts,
 
 	this->jobs_.reserve(jobs);
 	for (i = 0; i < jobs; i++) {
-		this->jobs_.emplace_back(this->opts_, this->rslts_);
+		this->jobs_.emplace_back(i, this->opts_, this->rslts_);
 	}
 }
 
@@ -310,11 +311,12 @@ void pt_skip(void)
 	job->exit(0);
 }
 
-uint16_t pt_get_port(uint8_t)
+uint16_t pt_get_port(uint8_t i)
 {
-	return 0;
-	// auto job = pt::_jobs.top();
-	// return _port + job->id_ + (i * _max_jobs);
+	auto job = pt::_jobs.top();
+	auto &opts = job->opts_;
+
+	return opts->port_.get() + job->env_->id_ + (i * opts->jobs_.get());
 }
 
 const char *pt_get_name()

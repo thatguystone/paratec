@@ -32,7 +32,7 @@ public:
 	/**
 	 * Use these tests instead
 	 */
-	Main(std::initializer_list<sp<const Test>> tests) : tests_(std::move(tests))
+	Main(std::vector<sp<const Test>> tests) : tests_(std::move(tests))
 	{
 	}
 

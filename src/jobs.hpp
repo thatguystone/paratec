@@ -26,9 +26,18 @@ namespace pt
  */
 struct SharedJob {
 	/**
+	 * Sometimes useful
+	 */
+	const sp<const Opts> opts_;
+
+	/**
 	 * Set this in sub-class (so that mmap may be used as necessary).
 	 */
 	TestEnv *env_;
+
+	SharedJob(sp<const Opts> opts) : opts_(std::move(opts))
+	{
+	}
 
 	virtual ~SharedJob() = default;
 
@@ -40,6 +49,8 @@ struct SharedJob {
 
 class Job
 {
+	const int id_;
+
 protected:
 	sp<const Opts> opts_;
 	sp<Results> rslts_;
@@ -85,8 +96,8 @@ protected:
 	}
 
 public:
-	Job(sp<const Opts> opts, sp<Results> rslts, SharedJob *sj)
-		: opts_(std::move(opts)), rslts_(std::move(rslts)), sj_(sj)
+	Job(int id, sp<const Opts> opts, sp<Results> rslts, SharedJob *sj)
+		: id_(id), opts_(std::move(opts)), rslts_(std::move(rslts)), sj_(sj)
 	{
 	}
 
@@ -103,7 +114,8 @@ struct BasicSharedJob : public SharedJob {
 	TestEnv te_;
 	std::thread::id thid_;
 
-	BasicSharedJob() : thid_(std::this_thread::get_id())
+	BasicSharedJob(sp<const Opts> opts)
+		: SharedJob(std::move(opts)), thid_(std::this_thread::get_id())
 	{
 		this->env_ = &this->te_;
 	}
@@ -119,8 +131,8 @@ class BasicJob : public Job
 	BasicSharedJob sj_;
 
 public:
-	BasicJob(sp<const Opts> opts, sp<Results> rslts)
-		: Job(std::move(opts), std::move(rslts), &sj_)
+	BasicJob(int id, sp<const Opts> opts, sp<Results> rslts)
+		: Job(id, opts, std::move(rslts), &sj_), sj_(std::move(opts))
 	{
 	}
 
@@ -135,7 +147,7 @@ class ForkingSharedJob : public SharedJob
 	SharedMem<TestEnv> shm_;
 
 public:
-	ForkingSharedJob()
+	ForkingSharedJob(sp<const Opts> opts) : SharedJob(std::move(opts))
 	{
 		this->env_ = this->shm_.get();
 	}
@@ -163,8 +175,8 @@ class ForkingJob : public Job
 	void flush(int fd, std::string *to);
 
 public:
-	ForkingJob(sp<const Opts> opts, sp<Results> rslts)
-		: Job(std::move(opts), std::move(rslts), &sj_)
+	ForkingJob(int id, sp<const Opts> opts, sp<Results> rslts)
+		: Job(id, opts, std::move(rslts), &sj_), sj_(std::move(opts))
 	{
 	}
 

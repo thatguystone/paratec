@@ -111,7 +111,7 @@ Results Main::run(std::ostream &os, const std::vector<const char *> &args)
 	} else {
 		rslts->startTimer();
 		for (auto &test : tests) {
-			BasicJob(this->opts_, rslts).run(test);
+			BasicJob(0, this->opts_, rslts).run(test);
 		}
 	}
 

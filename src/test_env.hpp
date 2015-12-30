@@ -30,6 +30,11 @@ struct TestEnv {
 	bool skipped_;
 
 	/**
+	 * The id of the job that this test is running in
+	 */
+	int id_;
+
+	/**
 	 * Human-readable and print-friendly test name
 	 */
 	char test_name_[kSize];
@@ -59,6 +64,6 @@ struct TestEnv {
 	 */
 	char fail_msg_[kSize * 4];
 
-	void reset(const char *test_name, const char *func_name);
+	void reset(int id, const char *test_name, const char *func_name);
 };
 }
