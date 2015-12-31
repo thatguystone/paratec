@@ -265,9 +265,10 @@ __PT_ASSERT(sni, const char *);
 	double: fn,                                                                \
 	const double: fn
 
+// Just use this as the default for now: clang doesn't decay char[5] into
+// char*, so this doesn't work right.
 #define __PT_GEN_STR(fn)                                                       \
-	char *: fn,                                                                \
-	const char *: fn
+	default: fn
 
 #define __PT_GENERIC(name, expect, got, ...) \
 	_Generic((expect),                                                         \
@@ -277,8 +278,8 @@ __PT_ASSERT(sni, const char *);
 		__PT_GEN_STR(_pt_s##name))((expect), (got), " " __VA_ARGS__)
 
 #define __PT_IN(name, expect, got, ...) \
-	_Generic((haystack),                                                       \
-		__PT_GEN_STR(pt_s##name))((haystack), (needle), " " __VA_ARGS__)
+	_Generic((expect),                                                       \
+		__PT_GEN_STR(_pt_s##name))((expect), (got), " " __VA_ARGS__)
 
 // clang-format on
 
@@ -419,7 +420,7 @@ PT_PRINTF(3, 4) void _in(T expect, U got, const char *msg, ...)
 }
 
 template <typename T, typename U>
-PT_PRINTF(3, 4) void _nin(T expect, U got, const char *msg, ...)
+PT_PRINTF(3, 4) void _ni(T expect, U got, const char *msg, ...)
 {
 	__PT_FORWARD(T, U, not in, In, T, U);
 }
@@ -469,6 +470,6 @@ __PT_FNS
 	pt_mark();                                                                 \
 	__PT_IN(in, haystack, needle, ##__VA_ARGS__)
 
-#define pt_nin(haystack, needle, ...)                                          \
+#define pt_ni(haystack, needle, ...)                                           \
 	pt_mark();                                                                 \
-	__PT_IN(nin, haystack, needle, ##__VA_ARGS__)
+	__PT_IN(ni, haystack, needle, ##__VA_ARGS__)

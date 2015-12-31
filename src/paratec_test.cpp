@@ -14,9 +14,7 @@ namespace pt
 // @todo test errno assertions
 // @todo check error messages, last-line marks, etc
 
-PARATEC(asserts)
-{
-}
+#include "paratec_c_test.c"
 
 PARATEC(assertsFailure, PTFAIL())
 {

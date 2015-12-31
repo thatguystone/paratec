@@ -508,7 +508,7 @@ TEST(jobsAssertionLines)
 
 	auto res = rslts.get("_assertInTest");
 	pt_in(res.last_line_, "jobs_test.cpp");
-	pt_nin(res.last_line_, "last test assert");
+	pt_ni(res.last_line_, "last test assert");
 
 	res = rslts.get("_assertOutTest");
 	pt_in(res.last_line_, "last test assert: test start");

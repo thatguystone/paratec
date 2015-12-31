@@ -14,4 +14,20 @@
 
 PARATEC(asserts)
 {
+	pt_eq(0, 0);
+	pt_eq('a', 'a');
+	pt_eq("test", "test");
+
+	pt_ne(0, 1);
+	pt_ne('a', 'A');
+	pt_ne("test", "TEST");
+
+	pt_gt(1, 0);
+	pt_gt("z", "a");
+
+	pt_lt(0, 1);
+	pt_lt("a", "z");
+
+	pt_in("abcdefgh", "cde");
+	pt_ni("abcdefgh", "xyz");
 }

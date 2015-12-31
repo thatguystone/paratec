@@ -33,12 +33,6 @@ clean::
 
 include comm.mk
 
-FORMAT_DIRS += \
-	include/
-
-CFLAGS_ALL += \
-	-Iinclude/
-
 #
 # Extra build rules
 #
