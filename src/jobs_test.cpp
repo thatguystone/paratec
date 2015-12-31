@@ -12,6 +12,7 @@
 #include <thread>
 #include "jobs.hpp"
 #include "main.hpp"
+#include "util.hpp"
 #include "util_test.hpp"
 
 namespace pt
