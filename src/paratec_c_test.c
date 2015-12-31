@@ -28,6 +28,6 @@ PARATEC(asserts)
 	pt_lt(0, 1);
 	pt_lt("a", "z");
 
-	pt_in("abcdefgh", "cde");
-	pt_ni("abcdefgh", "xyz");
+	pt_in("cde", "abcdefgh");
+	pt_ni("xyz", "abcdefgh");
 }

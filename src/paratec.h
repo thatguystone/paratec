@@ -374,7 +374,7 @@ PT_PRINTF(4, 0) void _check(T expect,
 }
 
 template <typename T, typename U> struct In {
-	inline bool operator()(const T &haystack, const U &needle) const
+	inline bool operator()(const T &needle, const U &haystack) const
 	{
 		for (const auto &h : haystack) {
 			if (h == needle) {
@@ -387,7 +387,7 @@ template <typename T, typename U> struct In {
 };
 
 template <typename U> struct In<const char *, U> {
-	bool operator()(const char *haystack, const U &needle) const
+	bool operator()(const char *needle, const U &haystack) const
 	{
 		return std::string(haystack).find(needle) != std::string::npos;
 	}
@@ -397,9 +397,9 @@ template <typename U> struct In<char *, U> : In<const char *, U> {
 };
 
 template <typename U> struct In<const std::string, U> {
-	bool operator()(const std::string &haystack, const U &needle) const
+	bool operator()(const std::string &needle, const U &haystack) const
 	{
-		return haystack.find(needle) != std::string::npos;
+		return std::string(haystack).find(needle) != std::string::npos;
 	}
 };
 
@@ -407,9 +407,9 @@ template <typename U> struct In<std::string, U> : In<const std::string, U> {
 };
 
 template <typename T, typename U> struct NotIn {
-	inline bool operator()(const T &haystack, const U &needle) const
+	inline bool operator()(const T &needle, const U &haystack) const
 	{
-		return !In<T, U>()(haystack, needle);
+		return !In<T, U>()(needle, haystack);
 	}
 };
 
@@ -422,7 +422,7 @@ PT_PRINTF(3, 4) void _in(T expect, U got, const char *msg, ...)
 template <typename T, typename U>
 PT_PRINTF(3, 4) void _ni(T expect, U got, const char *msg, ...)
 {
-	__PT_FORWARD(T, U, not in, In, T, U);
+	__PT_FORWARD(T, U, not in, NotIn, T, U);
 }
 
 #define X(fn, human, opClass)                                                  \
@@ -466,10 +466,10 @@ __PT_FNS
 	pt_mark();                                                                 \
 	__PT_GENERIC(le, expect, got, ##__VA_ARGS__)
 
-#define pt_in(haystack, needle, ...)                                           \
+#define pt_in(needle, haystack, ...)                                           \
 	pt_mark();                                                                 \
-	__PT_IN(in, haystack, needle, ##__VA_ARGS__)
+	__PT_IN(in, needle, haystack, ##__VA_ARGS__)
 
-#define pt_ni(haystack, needle, ...)                                           \
+#define pt_ni(needle, haystack, ...)                                           \
 	pt_mark();                                                                 \
-	__PT_IN(ni, haystack, needle, ##__VA_ARGS__)
+	__PT_IN(ni, needle, haystack, ##__VA_ARGS__)

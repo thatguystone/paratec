@@ -45,7 +45,7 @@ TEST(jobsNoFork)
 		m.run(std::cout, { "paratec", "--nofork" });
 	});
 
-	pt_in(e.stdout_.c_str(), "Running: _0\n=========");
+	pt_in("Running: _0\n=========", e.stdout_.c_str());
 }
 
 TEST(jobsNoForkFiltered)
@@ -55,8 +55,8 @@ TEST(jobsNoForkFiltered)
 		m.run(std::cout, { "paratec", "--nofork", "-f", "_2" });
 	});
 
-	pt_in(e.stdout_.c_str(), "Running: _2");
-	pt_in(e.stdout_.c_str(), "100%: of 1");
+	pt_in("Running: _2", e.stdout_);
+	pt_in("100%: of 1", e.stdout_);
 }
 
 TEST(_threadedAssertion)
@@ -75,7 +75,7 @@ TEST(jobsNoForkThreadedAssertion)
 		m.run(std::cout, { "paratec", "--nofork" });
 	});
 
-	pt_in(e.stdout_.c_str(), "Whoa there!");
+	pt_in("Whoa there!", e.stdout_);
 }
 
 TEST(jobsFork)
@@ -86,7 +86,7 @@ TEST(jobsFork)
 	m.run(out, { "paratec" });
 
 	auto s = out.str();
-	pt_in(s, "100%");
+	pt_in("100%", s);
 }
 
 TEST(jobsForkFiltered)
@@ -96,7 +96,7 @@ TEST(jobsForkFiltered)
 		m.run(std::cout, { "paratec", "-f", "_2" });
 	});
 
-	pt_in(e.stdout_, "100%: of 1");
+	pt_in("100%: of 1", e.stdout_);
 }
 
 TEST(jobsForkNoCapture)
@@ -106,10 +106,10 @@ TEST(jobsForkNoCapture)
 		m.run(std::cout, { "paratec", "--nocapture" });
 	});
 
-	pt_in(e.stdout_, "_0");
-	pt_in(e.stdout_, "_1");
-	pt_in(e.stdout_, "_2");
-	pt_in(e.stdout_, "_3");
+	pt_in("_0", e.stdout_);
+	pt_in("_1", e.stdout_);
+	pt_in("_2", e.stdout_);
+	pt_in("_3", e.stdout_);
 }
 
 TEST(jobsVeryVerbose)
@@ -120,11 +120,11 @@ TEST(jobsVeryVerbose)
 	m.run(out, { "paratec", "-vvvv" });
 
 	auto s = out.str();
-	pt_in(s, "stdout\n");
-	pt_in(s, "_0");
-	pt_in(s, "_1");
-	pt_in(s, "_2");
-	pt_in(s, "_3");
+	pt_in("stdout\n", s);
+	pt_in("_0", s);
+	pt_in("_1", s);
+	pt_in("_2", s);
+	pt_in("_3", s);
 }
 
 TEST(jobsBench)
@@ -149,7 +149,7 @@ TEST(jobsSignal)
 	m.run(out, { "paratec" });
 
 	auto s = out.str();
-	pt_in(s, "received signal");
+	pt_in("received signal", s);
 }
 
 TEST(_exitMismatch, PTEXIT(1))
@@ -164,7 +164,7 @@ TEST(jobsExit)
 	m.run(out, { "paratec" });
 
 	auto s = out.str();
-	pt_in(s, "got exit code");
+	pt_in("got exit code", s);
 }
 
 TEST(_timeout, PTTIME(.001))
@@ -180,7 +180,7 @@ TEST(jobsTimeout)
 	m.run(out, { "paratec" });
 
 	auto s = out.str();
-	pt_in(s, "TIME OUT : _timeout");
+	pt_in("TIME OUT : _timeout", s);
 }
 
 static SharedMem<std::atomic_bool> _sleeping;
@@ -233,9 +233,9 @@ static void _fail(bool fork)
 	m.run(out, args);
 
 	auto s = out.str();
-	pt_in(s, "FAIL : _fail");
-	pt_in(s, "0%: of 1");
-	pt_in(s, "1 failures");
+	pt_in("FAIL : _fail", s);
+	pt_in("0%: of 1", s);
+	pt_in("1 failures", s);
 }
 
 TEST(jobsForkFail)
@@ -262,9 +262,9 @@ TEST(jobsError)
 	m.run(out, { "paratec", "-vvv" });
 
 	auto s = out.str();
-	pt_in(s, "ERROR : _error");
-	pt_in(s, "0%: of 1");
-	pt_in(s, "1 errors");
+	pt_in("ERROR : _error", s);
+	pt_in("0%: of 1", s);
+	pt_in("1 errors", s);
 }
 
 TEST(jobsDisabled)
@@ -275,8 +275,8 @@ TEST(jobsDisabled)
 	m.run(out, { "paratec", "-vvv", "-f=-_0" });
 
 	auto s = out.str();
-	pt_in(s, "DISABLED : _0");
-	pt_in(s, "100%: of 0");
+	pt_in("DISABLED : _0", s);
+	pt_in("100%: of 0", s);
 }
 
 TEST(_skip)
@@ -297,9 +297,9 @@ static void _skip(bool fork)
 	m.run(out, args);
 
 	auto s = out.str();
-	pt_in(s, "SKIP : _skip");
-	pt_in(s, "100%: of 1");
-	pt_in(s, "1 skipped");
+	pt_in("SKIP : _skip", s);
+	pt_in("100%: of 1", s);
+	pt_in("1 skipped", s);
 }
 
 TEST(jobsForkSkip)
@@ -378,10 +378,10 @@ static void _setIterName(bool fork)
 	m.run(out, args);
 
 	auto s = out.str();
-	pt_in(s, "PASS : _iterName:-1:fun:-1");
-	pt_in(s, "PASS : _iterName:0:fun:0");
-	pt_in(s, "PASS : _iterName:4:fun:4");
-	pt_in(s, "PASS : _notIterSetName (");
+	pt_in("PASS : _iterName:-1:fun:-1", s);
+	pt_in("PASS : _iterName:0:fun:0", s);
+	pt_in("PASS : _iterName:4:fun:4", s);
+	pt_in("PASS : _notIterSetName (", s);
 }
 
 TEST(jobsForkSetIterName)
@@ -416,7 +416,7 @@ TEST(jobsEmptyIterTest)
 	m.run(out, { "paratec", "--nofork" });
 
 	auto s = out.str();
-	pt_in(s, "100%: of 0 tests");
+	pt_in("100%: of 0 tests", s);
 }
 
 TEST(_null)
@@ -433,7 +433,7 @@ TEST(jobsCaptureNullByteInOutput)
 	m.run(out, { "paratec" });
 
 	auto s = out.str();
-	pt_in(s, std::string("null: \0", 7));
+	pt_in(std::string("null: \0", 7), s);
 }
 
 static void _fixtureUp()
@@ -463,9 +463,9 @@ TEST(jobsFixtures)
 		m.run(std::cout, { "paratec", "-vvvv" });
 	});
 
-	pt_in(e.stdout_, "cleanup\n");
-	pt_in(e.stdout_, "| up\n");
-	pt_in(e.stdout_, "| down\n");
+	pt_in("cleanup\n", e.stdout_);
+	pt_in("| up\n", e.stdout_);
+	pt_in("| down\n", e.stdout_);
 }
 
 TEST(jobsFixturesOrdering)
@@ -475,7 +475,7 @@ TEST(jobsFixturesOrdering)
 		m.run(std::cout, { "paratec", "--nocapture" });
 	});
 
-	pt_in(e.stdout_, "up\ndown\ncleanup\n");
+	pt_in("up\ndown\ncleanup\n", e.stdout_);
 }
 
 TEST(_assertInTest)
@@ -507,13 +507,13 @@ TEST(jobsAssertionLines)
 	auto rslts = m.run(std::cout, { "paratec" });
 
 	auto res = rslts.get("_assertInTest");
-	pt_in(res.last_line_, "jobs_test.cpp");
-	pt_ni(res.last_line_, "last test assert");
+	pt_in("jobs_test.cpp", res.last_line_);
+	pt_ni("last test assert", res.last_line_);
 
 	res = rslts.get("_assertOutTest");
-	pt_in(res.last_line_, "last test assert: test start");
+	pt_in("last test assert: test start", res.last_line_);
 
 	res = rslts.get("_assertMarkBeforeOut");
-	pt_in(res.last_line_, "last test assert: /");
+	pt_in("last test assert: /", res.last_line_);
 }
 }
