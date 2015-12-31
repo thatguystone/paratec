@@ -6,6 +6,7 @@
  * http://opensource.org/licenses/MIT
  */
 
+#include <signal.h>
 #include "fork.hpp"
 #include "util_test.hpp"
 

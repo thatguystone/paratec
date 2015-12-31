@@ -37,7 +37,7 @@ TEST(errFailures)
 		Err(-1, "this is not fine");
 		pt_fail("should not be fine");
 	} catch (Err e) {
-		pt_seq("this is not fine", e.what());
+		pt_eq("this is not fine", e.what());
 	}
 
 	try {

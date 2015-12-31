@@ -65,6 +65,11 @@ void Result::finalize(const TestEnv &te, sp<const Opts> opts)
 
 	this->name_ = te.test_name_;
 
+	if (*te.iter_name_ != '\0') {
+		this->name_ += ':';
+		this->name_ += te.iter_name_;
+	}
+
 	if (te.skipped_) {
 		this->skipped_ = true;
 	} else if (this->timedout_) {

@@ -16,7 +16,7 @@
 namespace pt
 {
 
-PRINTF(2, 3)
+PT_PRINTF(2, 3)
 void format(std::ostream &os, const char *format, ...);
 
 /**

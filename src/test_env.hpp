@@ -8,6 +8,7 @@
  */
 
 #pragma once
+#include "paratec.h"
 
 namespace pt
 {
@@ -62,7 +63,7 @@ struct TestEnv {
 	/**
 	 * Message to display to user on failure
 	 */
-	char fail_msg_[kSize * 4];
+	char fail_msg_[PT_FAIL_BUFF];
 
 	void reset(int id, const char *test_name, const char *func_name);
 };

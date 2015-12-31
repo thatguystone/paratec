@@ -11,7 +11,7 @@
 #include <sys/wait.h>
 #include <thread>
 #include "jobs.hpp"
-#include "paratec.hpp"
+#include "main.hpp"
 #include "util_test.hpp"
 
 namespace pt
@@ -56,6 +56,11 @@ TEST(_port)
 	pt_gt(pt_get_port(1), p);
 }
 
+TEST(_iterName, PTI(-5, 5))
+{
+	pt_set_iter_name("fun:%" PRId64, _i);
+}
+
 TEST(_threadedAssertion)
 {
 	std::thread th([]() { pt_fail("from another thread"); });
@@ -88,7 +93,7 @@ TEST(jobsNoFork)
 		m.run(std::cout, { "paratec", "--nofork" });
 	});
 
-	pt_ss(e.stdout_.c_str(), "Running: _0\n=========");
+	pt_in(e.stdout_.c_str(), "Running: _0\n=========");
 }
 
 TEST(jobsNoForkFiltered)
@@ -98,8 +103,8 @@ TEST(jobsNoForkFiltered)
 		m.run(std::cout, { "paratec", "--nofork", "-f", "_2" });
 	});
 
-	pt_ss(e.stdout_.c_str(), "Running: _2");
-	pt_ss(e.stdout_.c_str(), "100%: of 1");
+	pt_in(e.stdout_.c_str(), "Running: _2");
+	pt_in(e.stdout_.c_str(), "100%: of 1");
 }
 
 TEST(jobsNoForkThreadedAssertion)
@@ -109,7 +114,7 @@ TEST(jobsNoForkThreadedAssertion)
 		m.run(std::cout, { "paratec", "--nofork" });
 	});
 
-	pt_ss(e.stdout_.c_str(), "Whoa there!");
+	pt_in(e.stdout_.c_str(), "Whoa there!");
 }
 
 TEST(jobsFork)
@@ -120,7 +125,7 @@ TEST(jobsFork)
 	m.run(out, { "paratec" });
 
 	auto s = out.str();
-	pt_ss(s.c_str(), "100%");
+	pt_in(s, "100%");
 }
 
 TEST(jobsForkFiltered)
@@ -130,7 +135,7 @@ TEST(jobsForkFiltered)
 		m.run(std::cout, { "paratec", "-f", "_2" });
 	});
 
-	pt_ss(e.stdout_.c_str(), "100%: of 1");
+	pt_in(e.stdout_.c_str(), "100%: of 1");
 }
 
 TEST(jobsAbortSignal, PTSIG(6))
@@ -146,7 +151,7 @@ TEST(jobsSignal)
 	m.run(out, { "paratec" });
 
 	auto s = out.str();
-	pt_ss(s.c_str(), "received signal");
+	pt_in(s, "received signal");
 }
 
 TEST(jobsTimeout)
@@ -157,7 +162,7 @@ TEST(jobsTimeout)
 	m.run(out, { "paratec" });
 
 	auto s = out.str();
-	pt_ss(s.c_str(), "TIME OUT : _timeout");
+	pt_in(s, "TIME OUT : _timeout");
 }
 
 TEST(jobsTerminateFromSignal)
@@ -196,9 +201,9 @@ static void _fail(bool fork)
 	m.run(out, args);
 
 	auto s = out.str();
-	pt_ss(s.c_str(), "FAIL : _fail");
-	pt_ss(s.c_str(), "0%: of 1");
-	pt_ss(s.c_str(), "1 failures");
+	pt_in(s, "FAIL : _fail");
+	pt_in(s, "0%: of 1");
+	pt_in(s, "1 failures");
 }
 
 TEST(jobsForkFail)
@@ -220,9 +225,9 @@ TEST(jobsError)
 	m.run(out, { "paratec", "-vvv" });
 
 	auto s = out.str();
-	pt_ss(s.c_str(), "ERROR : _error");
-	pt_ss(s.c_str(), "0%: of 1");
-	pt_ss(s.c_str(), "1 errors");
+	pt_in(s, "ERROR : _error");
+	pt_in(s, "0%: of 1");
+	pt_in(s, "1 errors");
 }
 
 static void _skip(bool fork)
@@ -238,9 +243,9 @@ static void _skip(bool fork)
 	m.run(out, args);
 
 	auto s = out.str();
-	pt_ss(s.c_str(), "SKIP : _skip");
-	pt_ss(s.c_str(), "100%: of 1");
-	pt_ss(s.c_str(), "1 skipped");
+	pt_in(s, "SKIP : _skip");
+	pt_in(s, "100%: of 1");
+	pt_in(s, "1 skipped");
 }
 
 TEST(jobsForkSkip)
@@ -278,13 +283,41 @@ TEST(jobsNoForkGetPort)
 
 TEST(jobsGetCppName)
 {
-	pt_seq("jobsGetCppName", pt_get_name());
+	pt_eq("jobsGetCppName", pt_get_name());
 }
 
 extern "C" {
 TEST(jobsGetCName)
 {
-	pt_seq("jobsGetCName", pt_get_name());
+	pt_eq("jobsGetCName", pt_get_name());
 }
+}
+
+static void _setIterName(bool fork)
+{
+	std::stringstream out;
+
+	std::vector<const char *> args({ "paratec", "-vvv" });
+	if (!fork) {
+		args.push_back("--nofork");
+	}
+
+	Main m({ MKTEST(_iterName) });
+	auto res = m.run(out, args);
+
+	auto s = out.str();
+	pt_in(s, "PASS : _iterName:-1:fun:-1");
+	pt_in(s, "PASS : _iterName:0:fun:0");
+	pt_in(s, "PASS : _iterName:4:fun:4");
+}
+
+TEST(jobsForkSetIterName)
+{
+	_setIterName(true);
+}
+
+TEST(jobsNoForkSetIterName)
+{
+	_setIterName(false);
 }
 }

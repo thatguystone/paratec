@@ -33,7 +33,10 @@ clean::
 
 include comm.mk
 
-CXXFLAGS_BASE += \
+FORMAT_DIRS += \
+	include/
+
+CFLAGS_ALL += \
 	-Iinclude/
 
 #

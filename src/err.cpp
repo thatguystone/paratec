@@ -25,11 +25,7 @@ Err::Err(int err, const char *format, ...)
 
 Err::Err(int err, const char *format, va_list args)
 {
-	va_list cpy;
-	va_copy(cpy, args);
-	DTor d([&]() { va_end(cpy); });
-
-	this->vset(err, format, cpy);
+	this->vset(err, format, args);
 }
 
 void Err::set(int err, const char *format, ...)
@@ -81,12 +77,7 @@ OSErr::OSErr(int err,
 			 va_list args)
 {
 	int eno = errno;
-
-	va_list cpy;
-	va_copy(cpy, args);
-	DTor d([&]() { va_end(cpy); });
-
-	this->vset(err, eno, std::move(allowed_errnos), format, cpy);
+	this->vset(err, eno, std::move(allowed_errnos), format, args);
 }
 
 void OSErr::vset(int err,

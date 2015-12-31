@@ -41,13 +41,19 @@ TESTV(optsVerbose, _verbose)
 
 TEST(optsFilter)
 {
+	setenv("PTFILTER", "0", 1);
+
+	Opts opts;
+	opts.parse({ "paratec", "--filter=1,-2", "-f", "3,4", "-f", "5" });
+
+	// pt::eq(opts.filter_.filts_, std::vector<FilterOpt::F>({}));
 }
 
 TEST(optsPort)
 {
 	Opts opts;
 	opts.parse({ "paratec", "--port", "3333" });
-	pt_feq(opts.port_.get(), 3333);
+	pt_eq(opts.port_.get(), 3333);
 }
 
 TEST(optsPortError, PTEXIT(1))
@@ -60,7 +66,7 @@ TEST(optsTimeout)
 {
 	Opts opts;
 	opts.parse({ "paratec", "-t", "3.3" });
-	pt_feq(opts.timeout_.get(), 3.3);
+	pt_eq(opts.timeout_.get(), 3.3);
 }
 
 TEST(optsTimeoutError, PTEXIT(1))

@@ -112,19 +112,19 @@ VALGRIND = \
 # ============================================================
 #
 
-_CFLAGS = \
+CFLAGS_ALL += \
 	-g \
 	-fPIC \
 	-Wall \
-	-Wextra \
 	-Wcast-qual \
 	-Wdisabled-optimization \
+	-Werror \
+	-Wextra \
 	-Wformat=2 \
 	-Wredundant-decls \
 	-Wshadow \
 	-Wundef \
 	-Wwrite-strings \
-	-Werror \
 	-fstack-protector \
 	--param=ssp-buffer-size=4 \
 	-D_FORTIFY_SOURCE=2 \
@@ -136,63 +136,63 @@ _CFLAGS = \
 	-I$(SRC_DIR)/
 
 # For both CFLAGS_TEST and CXXFLAGS_TEST
-CFLAGS_TEST_BASE = \
+CFLAGS_TEST_BASE += \
 	-O0 \
 	--coverage \
 	-fno-inline \
 	-DTESTING
 
 # Use for both CFLAGS and CFLAGS_TEST
-CFLAGS_BASE = \
-	$(_CFLAGS) \
+CFLAGS_BASE += \
+	$(CFLAGS_ALL) \
 	-std=gnu11 \
 	-Wdeclaration-after-statement \
 	-Wmissing-prototypes \
 	-Wstrict-prototypes
 
 # Use for both CXXFLAGS and CXXFLAGS_TEST
-CXXFLAGS_BASE = \
-	$(_CFLAGS) \
+CXXFLAGS_BASE += \
+	$(CFLAGS_ALL) \
 	-Wnon-virtual-dtor \
 	-std=gnu++11
 
 # For an optimized (release) build
-CFLAGS = \
+CFLAGS += \
 	$(CFLAGS_BASE) \
 	-O3
 
 # For building test binaries
-CFLAGS_TEST = \
+CFLAGS_TEST += \
 	$(CFLAGS_BASE) \
 	$(CFLAGS_TEST_BASE)
 
 # For an optimized (release) build
-CXXFLAGS = \
+CXXFLAGS += \
 	$(CXXFLAGS_BASE) \
 	-O3
 
 # For building test binaries
-CXXFLAGS_TEST = \
+CXXFLAGS_TEST += \
 	$(CXXFLAGS_BASE) \
 	$(CFLAGS_TEST_BASE)
 
 # For every build
-LDFLAGS_BASE = \
+LDFLAGS_BASE += \
 	-rdynamic \
 	-pthread
 
 # For linking binaries
-LDFLAGS = \
+LDFLAGS += \
 	$(LDFLAGS_BASE) \
 	-pie
 
 # For linking tests
-LDFLAGS_TEST = \
+LDFLAGS_TEST += \
 	$(LDFLAGS) \
 	--coverage
 
 # For linking shared objects
-LDFLAGS_SO = \
+LDFLAGS_SO += \
 	$(LDFLAGS_BASE)
 
 ifneq (,$(wildcard $(VMAP)))

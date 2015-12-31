@@ -6,7 +6,7 @@
  * http://opensource.org/licenses/MIT
  */
 
-#include "paratec.hpp"
+#include "main.hpp"
 #include "test.hpp"
 #include "util_test.hpp"
 
@@ -63,7 +63,7 @@ TESTV(testFilter, _testFilter)
 	auto opts = mksp<Opts>();
 
 	opts->parse(_t->args_);
-	pt_msg(test->bindTo(0, opts)->enabled() == _t->enabled_,
-		   "expected test to be %s", _t->enabled_ ? "enabled" : "disabled");
+	pt(test->bindTo(0, opts)->enabled() == _t->enabled_,
+	   "expected test to be %s", _t->enabled_ ? "enabled" : "disabled");
 }
 }

@@ -13,13 +13,6 @@
 
 #define INDENT "    "
 
-#ifndef PRINTF
-/**
- * Create a printf-style function
- */
-#define PRINTF(f, a) __attribute__((format(printf, f, a)))
-#endif
-
 template <typename T> using sp = std::shared_ptr<T>;
 
 template <typename T, typename... Args>

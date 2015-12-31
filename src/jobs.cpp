@@ -325,7 +325,18 @@ const char *pt_get_name()
 	return job->env_->test_name_;
 }
 
-void pt_fail_(const char *format, ...)
+void pt_set_iter_name(const char *format, ...)
+{
+	va_list args;
+	auto job = pt::_jobs.top();
+
+	va_start(args, format);
+	vsnprintf(job->env_->iter_name_, sizeof(job->env_->iter_name_), format,
+			  args);
+	va_end(args);
+}
+
+void _pt_fail(const char *format, ...)
 {
 	va_list args;
 	auto job = pt::_jobs.top();
@@ -344,7 +355,7 @@ void pt_fail_(const char *format, ...)
 	abort();
 }
 
-void pt_mark_(const char *file, const char *func, const size_t line)
+void _pt_mark(const char *file, const char *func, const size_t line)
 {
 	auto job = pt::_jobs.top();
 
