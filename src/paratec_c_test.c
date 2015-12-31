@@ -9,9 +9,6 @@
 #include "paratec.h"
 #include <stdlib.h>
 
-// @todo test c assertions
-// @todo test wait_for
-
 PARATEC(asserts)
 {
 	pt_eq(0, 0);
@@ -25,9 +22,21 @@ PARATEC(asserts)
 	pt_gt(1, 0);
 	pt_gt("z", "a");
 
+	pt_ge(1, 1);
+	pt_ge("z", "z");
+
 	pt_lt(0, 1);
 	pt_lt("a", "z");
 
+	pt_le(1, 1);
+	pt_le("z", "z");
+
 	pt_in("cde", "abcdefgh");
 	pt_ni("xyz", "abcdefgh");
+}
+
+PARATEC(waitFor)
+{
+	int i = 0;
+	pt_wait_for(i++ == 10);
 }
