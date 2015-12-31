@@ -24,6 +24,11 @@ std::string to_string(const std::string &t)
 {
 	return t;
 }
+
+std::string to_string(nullptr_t &)
+{
+	return "(nil)";
+}
 }
 
 #define THUNK(cname, type, human, opClass, ...)                                \

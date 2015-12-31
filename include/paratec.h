@@ -292,13 +292,44 @@ namespace std
 
 std::string to_string(const char *t);
 std::string to_string(const std::string &t);
+std::string to_string(nullptr_t &);
+template <typename T> std::string to_string(const T *t)
+{
+	char buff[128];
+	snprintf(buff, sizeof(buff), "%p", t);
+	return buff;
+}
 
-template <> struct equal_to<const char *> {
-	inline bool operator()(const char *lhs, const std::string &rhs) const
+template <> struct equal_to<void *> {
+	inline bool operator()(const void *lhs, const void *rhs) const
 	{
-		return strcmp(lhs, rhs.c_str()) == 0;
+		return lhs == rhs;
 	}
 };
+
+template <> struct not_equal_to<void *> {
+	inline bool operator()(const void *lhs, const void *rhs) const
+	{
+		return lhs != rhs;
+	}
+};
+
+// clang-format off
+template <> struct equal_to<const char *> : equal_to<const std::string> {};
+template <> struct equal_to<char *> : equal_to<const std::string> {};
+template <> struct not_equal_to<const char *> : not_equal_to<const std::string> {};
+template <> struct not_equal_to<char *> : not_equal_to<const std::string> {};
+template <> struct greater<const char *> : greater<const std::string> {};
+template <> struct greater<char *> : greater<const std::string> {};
+template <> struct greater_equal<const char *> : greater_equal<const std::string> {};
+template <> struct greater_equal<char *> : greater_equal<const std::string> {};
+template <> struct less<const char *> : less<const std::string> {};
+template <> struct less<char *> : less<const std::string> {};
+template <> struct less_equal<const char *> : less_equal<const std::string> {};
+template <> struct less_equal<char *> : less_equal<const std::string> {};
+template <> struct equal_to<nullptr_t> : equal_to<void *> {};
+template <> struct not_equal_to<nullptr_t> : not_equal_to<void *> {};
+// clang-format on
 }
 
 namespace pt

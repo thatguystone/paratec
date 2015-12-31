@@ -47,5 +47,9 @@ TEST(sharedMem)
 
 	pt(m0->load());
 	pt(m1->load());
+
+	SharedMem<std::atomic_bool> m2(std::move(m0));
+	pt_eq(nullptr, m0.get());
+	pt_ne(nullptr, m2.get());
 }
 }
