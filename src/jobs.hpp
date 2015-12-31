@@ -49,7 +49,7 @@ struct SharedJob {
 
 class Job
 {
-	const int id_;
+	const uint id_;
 
 protected:
 	sp<const Opts> opts_;
@@ -96,7 +96,7 @@ protected:
 	}
 
 public:
-	Job(int id, sp<const Opts> opts, sp<Results> rslts, SharedJob *sj)
+	Job(uint id, sp<const Opts> opts, sp<Results> rslts, SharedJob *sj)
 		: id_(id), opts_(std::move(opts)), rslts_(std::move(rslts)), sj_(sj)
 	{
 	}
@@ -131,7 +131,7 @@ class BasicJob : public Job
 	BasicSharedJob sj_;
 
 public:
-	BasicJob(int id, sp<const Opts> opts, sp<Results> rslts)
+	BasicJob(uint id, sp<const Opts> opts, sp<Results> rslts)
 		: Job(id, opts, std::move(rslts), &sj_), sj_(std::move(opts))
 	{
 	}
@@ -175,7 +175,7 @@ class ForkingJob : public Job
 	void flush(int fd, std::string *to);
 
 public:
-	ForkingJob(int id, sp<const Opts> opts, sp<Results> rslts)
+	ForkingJob(uint id, sp<const Opts> opts, sp<Results> rslts)
 		: Job(id, opts, std::move(rslts), &sj_), sj_(std::move(opts))
 	{
 	}

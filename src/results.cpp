@@ -54,7 +54,7 @@ void Result::dumpOut(std::ostream &os,
 	std::istringstream is(s);
 	while (std::getline(is, l)) {
 		os.write(STDPREFIX, strlen(STDPREFIX));
-		os.write(l.c_str(), l.size());
+		os.write(l.c_str(), std::streamsize(l.size()));
 		os.put('\n');
 	}
 }

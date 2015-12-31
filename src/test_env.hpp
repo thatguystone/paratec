@@ -33,7 +33,7 @@ struct TestEnv {
 	/**
 	 * The id of the job that this test is running in
 	 */
-	int id_;
+	uint id_;
 
 	/**
 	 * Human-readable and print-friendly test name
@@ -65,6 +65,6 @@ struct TestEnv {
 	 */
 	char fail_msg_[PT_FAIL_BUFF];
 
-	void reset(int id, const char *test_name, const char *func_name);
+	void reset(uint id, const char *test_name, const char *func_name);
 };
 }

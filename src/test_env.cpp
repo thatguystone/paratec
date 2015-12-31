@@ -12,7 +12,7 @@
 namespace pt
 {
 
-void TestEnv::reset(int id, const char *test_name, const char *func_name)
+void TestEnv::reset(uint id, const char *test_name, const char *func_name)
 {
 	this->id_ = id;
 	this->failed_ = false;

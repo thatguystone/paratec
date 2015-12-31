@@ -101,7 +101,7 @@ bool Fork::flush(int fd, std::string *s)
 		OSErr(err, { EAGAIN, EWOULDBLOCK }, "failed to read from subprocess");
 
 		if (err > 0) {
-			s->append(buff, err);
+			s->append(buff, (size_t)err);
 		}
 	} while (err == sizeof(buff));
 

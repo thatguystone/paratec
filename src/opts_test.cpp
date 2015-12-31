@@ -6,6 +6,7 @@
  * http://opensource.org/licenses/MIT
  */
 
+#include <limits>
 #include <stdlib.h>
 #include "opts.hpp"
 #include "util_test.hpp"
@@ -15,7 +16,7 @@ namespace pt
 
 static struct {
 	std::vector<const char *> args_;
-	int cnt;
+	uint cnt;
 } _verbose[] = {
 	{
 	 .args_ = { "paratec" },
@@ -53,13 +54,15 @@ TEST(optsPort)
 {
 	Opts opts;
 	opts.parse({ "paratec", "--port", "3333" });
-	pt_eq(opts.port_.get(), 3333);
+	pt_eq(opts.port_.get(), (uint16_t)3333);
 }
 
-TEST(optsPortError, PTEXIT(1))
+TEST(optsPortError)
 {
 	Opts opts;
 	opts.parse({ "paratec", "--port", "-1" });
+
+	pt_eq(std::numeric_limits<uint16_t>::max(), opts.port_.get());
 }
 
 TEST(optsTimeout)

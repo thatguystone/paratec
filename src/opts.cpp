@@ -30,21 +30,31 @@ void Opt::showUsage()
 	printf(INDENT INDENT "%s\n", this->help_.c_str());
 }
 
-template <> void TypedOpt<int>::parse(std::string arg)
+static uint _stoul(const std::string &name, const std::string &arg)
 {
+	uint v = 0;
+
 	try {
-		this->set(std::stoi(arg));
-		if (this->get() < 0) {
-			Err(-1, "%s: `%s` must not be less than 0", this->name_.c_str(),
-				arg.c_str());
-		}
+		v = (uint)std::stoul(arg);
 	} catch (std::invalid_argument) {
-		Err(-1, "%s: `%s` could not be parsed to an integer",
-			this->name_.c_str(), arg.c_str());
+		Err(-1, "%s: `%s` could not be parsed to an integer", name.c_str(),
+			arg.c_str());
 	} catch (std::out_of_range) {
-		Err(-1, "%s: `%s` is too large to be an integer", this->name_.c_str(),
+		Err(-1, "%s: `%s` is too large to be an integer", name.c_str(),
 			arg.c_str());
 	}
+
+	return v;
+}
+
+template <> void TypedOpt<uint>::parse(std::string arg)
+{
+	this->set(_stoul(this->name_, arg));
+}
+
+template <> void TypedOpt<uint16_t>::parse(std::string arg)
+{
+	this->set((uint16_t)_stoul(this->name_, arg));
 }
 
 template <> void TypedOpt<double>::parse(std::string arg)
@@ -188,9 +198,9 @@ void Opts::tryParse(const std::vector<const char *> &args,
 
 	optind = 1;
 	while (1) {
-		char c
-			= getopt_long(args.size(), const_cast<char *const *>(args.data()),
-						  optstr.c_str(), lopts, NULL);
+		auto c = getopt_long((int)args.size(),
+							 const_cast<char *const *>(args.data()),
+							 optstr.c_str(), lopts, NULL);
 		if (c == -1) {
 			break;
 		}

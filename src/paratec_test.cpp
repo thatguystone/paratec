@@ -12,12 +12,9 @@ namespace pt
 {
 
 // @todo test errno assertions
+// @todo check error messages, last-line marks, etc
 
 PARATEC(asserts)
 {
-	uint32_t a = 1;
-	uint64_t b = 2;
-
-	pt_eq(a, b);
 }
 }

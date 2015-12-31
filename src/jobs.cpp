@@ -214,7 +214,7 @@ void ForkingJob::terminate()
 void Jobs::runNextTest(Job *job)
 {
 	while (this->testI_ < this->tests_.size()) {
-		int i = this->testI_++;
+		auto i = this->testI_++;
 		auto test = this->tests_[i];
 
 		if (job->run(std::move(test))) {
@@ -248,9 +248,9 @@ Jobs::Jobs(sp<const Opts> opts,
 		   std::vector<sp<const Test>> tests)
 	: opts_(std::move(opts)), rslts_(std::move(rslts)), tests_(std::move(tests))
 {
-	const int jobs = this->opts_->jobs_.get();
+	const auto jobs = this->opts_->jobs_.get();
 
-	int i;
+	uint i;
 
 	if (_bin.size() == 0) {
 		_bin = this->opts_->bin_name_;
@@ -316,7 +316,8 @@ uint16_t pt_get_port(uint8_t i)
 	auto job = pt::_jobs.top();
 	auto &opts = job->opts_;
 
-	return opts->port_.get() + job->env_->id_ + (i * opts->jobs_.get());
+	return (uint16_t)((opts->port_.get() + job->env_->id_)
+					  + (i * opts->jobs_.get()));
 }
 
 const char *pt_get_name()

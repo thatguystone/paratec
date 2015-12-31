@@ -14,7 +14,7 @@
 namespace pt
 {
 
-Err::Err(int err, const char *format, ...)
+Err::Err(ssize_t err, const char *format, ...)
 {
 	va_list args;
 	va_start(args, format);
@@ -23,12 +23,12 @@ Err::Err(int err, const char *format, ...)
 	this->vset(err, format, args);
 }
 
-Err::Err(int err, const char *format, va_list args)
+Err::Err(ssize_t err, const char *format, va_list args)
 {
 	this->vset(err, format, args);
 }
 
-void Err::set(int err, const char *format, ...)
+void Err::set(ssize_t err, const char *format, ...)
 {
 	va_list args;
 	va_start(args, format);
@@ -37,7 +37,7 @@ void Err::set(int err, const char *format, ...)
 	this->vset(err, format, args);
 }
 
-void Err::vset(int err, const char *format, va_list args)
+void Err::vset(ssize_t err, const char *format, va_list args)
 {
 	if (err >= 0) {
 		return;
@@ -57,7 +57,7 @@ const char *Err::what() const noexcept
 	return this->msg_.c_str();
 }
 
-OSErr::OSErr(int err,
+OSErr::OSErr(ssize_t err,
 			 std::initializer_list<int> allowed_errnos,
 			 const char *format,
 			 ...)
@@ -71,7 +71,7 @@ OSErr::OSErr(int err,
 	this->vset(err, eno, std::move(allowed_errnos), format, args);
 }
 
-OSErr::OSErr(int err,
+OSErr::OSErr(ssize_t err,
 			 std::initializer_list<int> allowed_errnos,
 			 const char *format,
 			 va_list args)
@@ -80,7 +80,7 @@ OSErr::OSErr(int err,
 	this->vset(err, eno, std::move(allowed_errnos), format, args);
 }
 
-void OSErr::vset(int err,
+void OSErr::vset(ssize_t err,
 				 int eno,
 				 std::initializer_list<int> allowed_errnos,
 				 const char *format,

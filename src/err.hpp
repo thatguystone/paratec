@@ -24,20 +24,20 @@ protected:
 	Err() = default;
 
 	PT_PRINTF(3, 4)
-	void set(int err, const char *format, ...);
+	void set(ssize_t err, const char *format, ...);
 
 	PT_PRINTF(3, 0)
-	void vset(int err, const char *format, va_list args);
+	void vset(ssize_t err, const char *format, va_list args);
 
 public:
-	int err_;
+	ssize_t err_;
 	std::string msg_;
 
 	PT_PRINTF(3, 4)
-	Err(int err, const char *format, ...);
+	Err(ssize_t err, const char *format, ...);
 
 	PT_PRINTF(3, 0)
-	Err(int err, const char *format, va_list args);
+	Err(ssize_t err, const char *format, va_list args);
 
 	const char *what() const noexcept override;
 };
@@ -45,7 +45,7 @@ public:
 class OSErr : public Err
 {
 	PT_PRINTF(5, 0)
-	void vset(int err,
+	void vset(ssize_t err,
 			  int eno,
 			  std::initializer_list<int> allowed_errnos,
 			  const char *format,
@@ -53,13 +53,13 @@ class OSErr : public Err
 
 public:
 	PT_PRINTF(4, 5)
-	OSErr(int err,
+	OSErr(ssize_t err,
 		  std::initializer_list<int> allowed_errnos,
 		  const char *format,
 		  ...);
 
 	PT_PRINTF(4, 0)
-	OSErr(int err,
+	OSErr(ssize_t err,
 		  std::initializer_list<int> allowed_errnos,
 		  const char *format,
 		  va_list args);

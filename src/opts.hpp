@@ -169,18 +169,18 @@ public:
 			   const std::vector<Opt *> &opts);
 };
 
-class JobsOpt : public TypedOpt<int>
+class JobsOpt : public TypedOpt<uint>
 {
 public:
 	JobsOpt()
-		: TypedOpt<int>("jobs",
-						'j',
-						"PTJOBS",
-						"NUMCPU",
-						"number of tests to run in parallel")
+		: TypedOpt<uint>("jobs",
+						 'j',
+						 "PTJOBS",
+						 "NUMCPU",
+						 "number of tests to run in parallel")
 	{
-		int count = sysconf(_SC_NPROCESSORS_ONLN);
-		this->v_ = std::max(1, count);
+		auto count = sysconf(_SC_NPROCESSORS_ONLN);
+		this->v_ = (uint)std::max<decltype(count)>(1, count);
 	}
 };
 
@@ -209,17 +209,17 @@ public:
 	}
 };
 
-class PortOpt : public TypedOpt<int>
+class PortOpt : public TypedOpt<uint16_t>
 {
-	static constexpr int kPort = 23120;
+	static constexpr uint16_t kPort = 23120;
 
 public:
 	PortOpt()
-		: TypedOpt<int>("port",
-						'p',
-						"PTPORT",
-						kPort,
-						"port number to start handing out ports at")
+		: TypedOpt<uint16_t>("port",
+							 'p',
+							 "PTPORT",
+							 kPort,
+							 "port number to start handing out ports at")
 	{
 	}
 };
@@ -239,15 +239,15 @@ public:
 	}
 };
 
-class VerboseOpt : public TypedOpt<int>
+class VerboseOpt : public TypedOpt<uint>
 {
 public:
 	VerboseOpt()
-		: TypedOpt<int>("verbose",
-						'v',
-						"PTVERBOSE",
-						"be more verbose with the test summary; pass "
-						"multiple times to increase verbosity")
+		: TypedOpt<uint>("verbose",
+						 'v',
+						 "PTVERBOSE",
+						 "be more verbose with the test summary; pass "
+						 "multiple times to increase verbosity")
 	{
 	}
 

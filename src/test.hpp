@@ -85,7 +85,8 @@ public:
 	 */
 	inline double timeout() const
 	{
-		return this->timeout_ ?: this->opts_->timeout_.get();
+		return this->timeout_ > 0 ? this->timeout_
+								  : this->opts_->timeout_.get();
 	}
 
 	/**

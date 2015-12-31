@@ -52,7 +52,7 @@ TEST(_port)
 {
 	auto p = pt_get_port(0);
 
-	pt_gt(p, 0);
+	pt_gt(p, (uint16_t)0);
 	pt_gt(pt_get_port(1), p);
 }
 
@@ -364,7 +364,7 @@ TEST(jobsEmptyIterTest)
 
 TEST(jobsCaptureNullByteInOutput)
 {
-// @todo
+	// @todo
 }
 
 TEST(jobsFixtures)
