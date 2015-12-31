@@ -33,6 +33,15 @@ PARATEC(asserts)
 
 	pt_in("cde", "abcdefgh");
 	pt_ni("xyz", "abcdefgh");
+
+	// @todo errno assertions
+	// pt_ner(0);
+	// pt_ner(0, "that's not an error");
+}
+
+PARATEC(assertsFailure, PTFAIL())
+{
+	pt_eq(0, 1);
 }
 
 PARATEC(waitFor)

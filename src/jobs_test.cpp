@@ -45,7 +45,7 @@ TEST(jobsNoFork)
 		m.run(std::cout, { "paratec", "--nofork" });
 	});
 
-	pt_in("Running: _0\n=========", e.stdout_.c_str());
+	pt_in("Running: _0\n=========", e.stdout_);
 }
 
 TEST(jobsNoForkFiltered)
