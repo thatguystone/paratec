@@ -20,92 +20,22 @@ namespace pt
 
 TEST(_0)
 {
+	printf("%s", pt_get_name());
 }
 
 TEST(_1)
 {
+	printf("%s", pt_get_name());
 }
 
 TEST(_2)
 {
+	printf("%s", pt_get_name());
 }
 
 TEST(_3)
 {
-}
-
-TEST(_fail)
-{
-	pt_fail("failure");
-}
-
-TEST(_error)
-{
-	abort();
-}
-
-TEST(_skip)
-{
-	pt_skip();
-}
-
-TEST(_port)
-{
-	auto p = pt_get_port(0);
-
-	pt_gt(p, (uint16_t)0);
-	pt_gt(pt_get_port(1), p);
-}
-
-TEST(_iterName, PTI(-5, 5))
-{
-	pt_set_iter_name("fun:%" PRId64, _i);
-}
-
-TEST(_notIterSetName)
-{
-	pt_set_iter_name("what am i doing?");
-}
-
-TEST(_noIters0, PTI(0, 0))
-{
-}
-
-TEST(_noIters1, PTI(1, 1))
-{
-}
-
-static int _empty[] = {};
-
-TESTV(_emptyVector, _empty)
-{
-}
-
-TEST(_threadedAssertion)
-{
-	std::thread th([]() { pt_fail("from another thread"); });
-
-	while (true) {
-		usleep(1000000);
-	}
-}
-
-TEST(_signalMismatch, PTSIG(5))
-{
-}
-
-TEST(_timeout, PTTIME(.001))
-{
-	std::this_thread::sleep_for(std::chrono::seconds(10));
-}
-
-static SharedMem<std::atomic_bool> _sleeping;
-TEST(_sleep)
-{
-	signal(SIGINT, SIG_IGN);
-	signal(SIGTERM, SIG_IGN);
-	_sleeping->store(true);
-	std::this_thread::sleep_for(std::chrono::seconds(10));
+	printf("%s", pt_get_name());
 }
 
 TEST(jobsNoFork)
@@ -127,6 +57,15 @@ TEST(jobsNoForkFiltered)
 
 	pt_in(e.stdout_.c_str(), "Running: _2");
 	pt_in(e.stdout_.c_str(), "100%: of 1");
+}
+
+TEST(_threadedAssertion)
+{
+	std::thread th([]() { pt_fail("from another thread"); });
+
+	while (true) {
+		usleep(1000000);
+	}
 }
 
 TEST(jobsNoForkThreadedAssertion)
@@ -157,12 +96,35 @@ TEST(jobsForkFiltered)
 		m.run(std::cout, { "paratec", "-f", "_2" });
 	});
 
-	pt_in(e.stdout_.c_str(), "100%: of 1");
+	pt_in(e.stdout_, "100%: of 1");
 }
 
 TEST(jobsForkNoCapture)
 {
-	// @todo
+	auto e = Fork().run([]() {
+		Main m({ MKTEST(_0), MKTEST(_1), MKTEST(_2), MKTEST(_3) });
+		m.run(std::cout, { "paratec", "--nocapture" });
+	});
+
+	pt_in(e.stdout_, "_0");
+	pt_in(e.stdout_, "_1");
+	pt_in(e.stdout_, "_2");
+	pt_in(e.stdout_, "_3");
+}
+
+TEST(jobsVeryVerbose)
+{
+	std::stringstream out;
+
+	Main m({ MKTEST(_0), MKTEST(_1), MKTEST(_2), MKTEST(_3) });
+	m.run(out, { "paratec", "-vvvv" });
+
+	auto s = out.str();
+	pt_in(s, "stdout\n");
+	pt_in(s, "_0");
+	pt_in(s, "_1");
+	pt_in(s, "_2");
+	pt_in(s, "_3");
 }
 
 TEST(jobsBench)
@@ -170,9 +132,13 @@ TEST(jobsBench)
 	// @todo
 }
 
-TEST(jobsAbortSignal, PTSIG(6))
+TEST(jobsAbortSignal, PTSIG(SIGABRT))
 {
 	abort();
+}
+
+TEST(_signalMismatch, PTSIG(5))
+{
 }
 
 TEST(jobsSignal)
@@ -186,6 +152,26 @@ TEST(jobsSignal)
 	pt_in(s, "received signal");
 }
 
+TEST(_exitMismatch, PTEXIT(1))
+{
+}
+
+TEST(jobsExit)
+{
+	std::stringstream out;
+
+	Main m({ MKTEST(_exitMismatch) });
+	m.run(out, { "paratec" });
+
+	auto s = out.str();
+	pt_in(s, "got exit code");
+}
+
+TEST(_timeout, PTTIME(.001))
+{
+	std::this_thread::sleep_for(std::chrono::seconds(10));
+}
+
 TEST(jobsTimeout)
 {
 	std::stringstream out;
@@ -195,6 +181,15 @@ TEST(jobsTimeout)
 
 	auto s = out.str();
 	pt_in(s, "TIME OUT : _timeout");
+}
+
+static SharedMem<std::atomic_bool> _sleeping;
+TEST(_sleep)
+{
+	signal(SIGINT, SIG_IGN);
+	signal(SIGTERM, SIG_IGN);
+	_sleeping->store(true);
+	std::this_thread::sleep_for(std::chrono::seconds(10));
 }
 
 TEST(jobsTerminateFromSignal)
@@ -218,6 +213,11 @@ TEST(jobsTerminateFromSignal)
 	pt_eq(f.pid(), err);
 	pt(WIFSIGNALED(status));
 	pt_eq(WTERMSIG(status), SIGKILL);
+}
+
+TEST(_fail)
+{
+	pt_fail("failure");
 }
 
 static void _fail(bool fork)
@@ -248,6 +248,11 @@ TEST(jobsNoForkFail)
 	_fail(false);
 }
 
+TEST(_error)
+{
+	abort();
+}
+
 // This can only run in a forked env since it calls exit()
 TEST(jobsError)
 {
@@ -260,6 +265,23 @@ TEST(jobsError)
 	pt_in(s, "ERROR : _error");
 	pt_in(s, "0%: of 1");
 	pt_in(s, "1 errors");
+}
+
+TEST(jobsDisabled)
+{
+	std::stringstream out;
+
+	Main m({ MKTEST(_0) });
+	m.run(out, { "paratec", "-vvv", "-f=-_0" });
+
+	auto s = out.str();
+	pt_in(s, "DISABLED : _0");
+	pt_in(s, "100%: of 0");
+}
+
+TEST(_skip)
+{
+	pt_skip();
 }
 
 static void _skip(bool fork)
@@ -288,6 +310,14 @@ TEST(jobsForkSkip)
 TEST(jobsNoForkSkip)
 {
 	_skip(false);
+}
+
+TEST(_port)
+{
+	auto p = pt_get_port(0);
+
+	pt_gt(p, (uint16_t)0);
+	pt_gt(pt_get_port(1), p);
 }
 
 static void _getPort(bool fork)
@@ -325,6 +355,16 @@ TEST(jobsGetCName)
 }
 }
 
+TEST(_iterName, PTI(-5, 5))
+{
+	pt_set_iter_name("fun:%" PRId64, _i);
+}
+
+TEST(_notIterSetName)
+{
+	pt_set_iter_name("what am i doing?");
+}
+
 static void _setIterName(bool fork)
 {
 	std::stringstream out;
@@ -354,6 +394,20 @@ TEST(jobsNoForkSetIterName)
 	_setIterName(false);
 }
 
+TEST(_noIters0, PTI(0, 0))
+{
+}
+
+TEST(_noIters1, PTI(1, 1))
+{
+}
+
+static int _empty[] = {};
+
+TESTV(_emptyVector, _empty)
+{
+}
+
 TEST(jobsEmptyIterTest)
 {
 	std::stringstream out;
@@ -365,13 +419,101 @@ TEST(jobsEmptyIterTest)
 	pt_in(s, "100%: of 0 tests");
 }
 
+TEST(_null)
+{
+	std::cout << std::string("null: \0", 7);
+	pt_fail("nulls?");
+}
+
 TEST(jobsCaptureNullByteInOutput)
 {
-	// @todo
+	std::stringstream out;
+
+	Main m({ MKTEST(_null) });
+	m.run(out, { "paratec" });
+
+	auto s = out.str();
+	pt_in(s, std::string("null: \0", 7));
+}
+
+static void _fixtureUp()
+{
+	printf("up\n");
+}
+static void _fixtureDown()
+{
+	printf("down\n");
+}
+static void _fixtureCleanup()
+{
+	printf("cleanup\n");
+}
+
+PARATEC(_fixture,
+		PTUP(_fixtureUp),
+		PTDOWN(_fixtureDown),
+		PTCLEANUP(_fixtureCleanup))
+{
 }
 
 TEST(jobsFixtures)
 {
-	// @todo test setup, teardown, cleanup
+	auto e = Fork().run([]() {
+		Main m({ MKTEST(_fixture) });
+		m.run(std::cout, { "paratec", "-vvvv" });
+	});
+
+	pt_in(e.stdout_, "cleanup\n");
+	pt_in(e.stdout_, "| up\n");
+	pt_in(e.stdout_, "| down\n");
+}
+
+TEST(jobsFixturesOrdering)
+{
+	auto e = Fork().run([]() {
+		Main m({ MKTEST(_fixture) });
+		m.run(std::cout, { "paratec", "--nocapture" });
+	});
+
+	pt_in(e.stdout_, "up\ndown\ncleanup\n");
+}
+
+TEST(_assertInTest)
+{
+	pt_eq(0, 1);
+}
+
+static void _assertOutTest()
+{
+	pt_eq(0, 1);
+}
+
+TEST(_assertOutTest)
+{
+	_assertOutTest();
+}
+
+TEST(_assertMarkBeforeOut)
+{
+	pt_mark();
+	_assertOutTest();
+}
+
+TEST(jobsAssertionLines)
+{
+	Main m({ MKTEST(_assertInTest),
+			 MKTEST(_assertOutTest),
+			 MKTEST(_assertMarkBeforeOut) });
+	auto rslts = m.run(std::cout, { "paratec" });
+
+	auto res = rslts.get("_assertInTest");
+	pt_in(res.last_line_, "jobs_test.cpp");
+	pt_nin(res.last_line_, "last test assert");
+
+	res = rslts.get("_assertOutTest");
+	pt_in(res.last_line_, "last test assert: test start");
+
+	res = rslts.get("_assertMarkBeforeOut");
+	pt_in(res.last_line_, "last test assert: /");
 }
 }

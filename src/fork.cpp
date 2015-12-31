@@ -110,10 +110,12 @@ bool Fork::flush(int fd, std::string *s)
 
 bool Fork::flushPipes()
 {
-	bool flushed;
+	bool flushed = false;
 
-	flushed = this->flush(this->stdout_, &this->out_);
-	flushed |= this->flush(this->stderr_, &this->err_);
+	if (this->stdout_ != -1) {
+		flushed = this->flush(this->stdout_, &this->out_);
+		flushed |= this->flush(this->stderr_, &this->err_);
+	}
 
 	return flushed;
 }

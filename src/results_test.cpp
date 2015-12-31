@@ -6,20 +6,21 @@
  * http://opensource.org/licenses/MIT
  */
 
+#include <iostream>
+#include "results.hpp"
 #include "util_test.hpp"
 
 namespace pt
 {
 
-// @todo test errno assertions
-// @todo check error messages, last-line marks, etc
-
-PARATEC(asserts)
+TEST(resultsGetFailure)
 {
-}
+	auto opts = mksp<Opts>();
 
-PARATEC(assertsFailure, PTFAIL())
-{
-	pt_eq(0, 1);
+	try {
+		Results(opts, std::cout).get("i dont exist");
+		pt_fail("should have failed");
+	} catch (Err) {
+	}
 }
 }

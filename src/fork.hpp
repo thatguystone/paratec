@@ -36,6 +36,9 @@ public:
 		std::string stderr_;
 	};
 
+	Fork() = default;
+	Fork(const Fork &) = delete;
+	Fork(Fork &&) = delete;
 	~Fork();
 
 	inline pid_t pid() const

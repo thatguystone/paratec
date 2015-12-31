@@ -73,15 +73,15 @@ void Result::finalize(const TestEnv &te, sp<const Opts> opts)
 	if (te.skipped_) {
 		this->skipped_ = true;
 	} else if (this->timedout_) {
-		// Skip so that the fallthrough isn't hit
+		// Skip so that nothing else is hit
+	} else if (te.failed_ && this->test_->expect_fail_) {
+		// Skip so that nothing else is hit
 	} else if (te.failed_) {
 		this->failed_ = true;
 	} else if (this->signal_num_ != 0 || this->test_->signal_num_ != 0) {
 		this->error_ = this->test_->signal_num_ != this->signal_num_;
 	} else if (this->exit_status_ != 0 || this->test_->exit_status_ != 0) {
 		this->error_ = this->test_->exit_status_ != this->exit_status_;
-	} else if (te.failed_ && !this->test_->expect_fail_) {
-		this->failed_ = true;
 	}
 
 	auto passed = this->skipped_
