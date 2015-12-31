@@ -24,7 +24,15 @@ namespace pt
 /**
  * Global info used for the currently-running test.
  */
-struct SharedJob {
+class SharedJob
+{
+protected:
+	/**
+	 * Environment-dependent test exiting.
+	 */
+	[[noreturn]] virtual void _exit(int status) = 0;
+
+public:
 	/**
 	 * Sometimes useful
 	 */
@@ -42,9 +50,15 @@ struct SharedJob {
 	virtual ~SharedJob() = default;
 
 	/**
-	 * Environment-dependent test exiting.
+	 * g++ isn't convinced that a virtual function is [[noreturn]], so just
+	 * wrap it here to make it simpler.
 	 */
-	[[noreturn]] virtual void exit(int status) = 0;
+	[[noreturn]] inline void exit(int status)
+	{
+		while (true) {
+			this->_exit(status);
+		}
+	}
 };
 
 class Job
@@ -109,7 +123,12 @@ public:
 	virtual bool run(sp<const Test> test) = 0;
 };
 
-struct BasicSharedJob : public SharedJob {
+class BasicSharedJob : public SharedJob
+{
+protected:
+	[[noreturn]] void _exit(int status) override;
+
+public:
 	jmp_buf jmp_;
 	TestEnv te_;
 	std::thread::id thid_;
@@ -119,8 +138,6 @@ struct BasicSharedJob : public SharedJob {
 	{
 		this->env_ = &this->te_;
 	}
-
-	[[noreturn]] void exit(int status) override;
 };
 
 /**
@@ -146,13 +163,14 @@ class ForkingSharedJob : public SharedJob
 {
 	SharedMem<TestEnv> shm_;
 
+protected:
+	[[noreturn]] void _exit(int status) override;
+
 public:
 	ForkingSharedJob(sp<const Opts> opts) : SharedJob(std::move(opts))
 	{
 		this->env_ = this->shm_.get();
 	}
-
-	[[noreturn]] void exit(int status) override;
 };
 
 /**

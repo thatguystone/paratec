@@ -6,10 +6,11 @@
  * http://opensource.org/licenses/MIT
  */
 
+#include <limits>
 #include <stdexcept>
-#include <string>
 #include <stdlib.h>
 #include <string.h>
+#include <string>
 #include "err.hpp"
 #include "opts.hpp"
 #include "std.hpp"
@@ -30,18 +31,23 @@ void Opt::showUsage()
 	printf(INDENT INDENT "%s\n", this->help_.c_str());
 }
 
-static uint _stoul(const std::string &name, const std::string &arg)
+template <typename T>
+static T _stoul(const std::string &name, const std::string &arg)
 {
-	uint v = 0;
+	T v = 0;
 
 	try {
-		v = (uint)std::stoul(arg);
+		auto pv = std::stoul(arg);
+		if (pv > std::numeric_limits<T>::max()) {
+			throw std::out_of_range("");
+		}
+
+		v = (T)pv;
 	} catch (std::invalid_argument) {
 		Err(-1, "%s: `%s` could not be parsed to an integer", name.c_str(),
 			arg.c_str());
 	} catch (std::out_of_range) {
-		Err(-1, "%s: `%s` is too large to be an integer", name.c_str(),
-			arg.c_str());
+		Err(-1, "%s: `%s` is too large", name.c_str(), arg.c_str());
 	}
 
 	return v;
@@ -49,12 +55,12 @@ static uint _stoul(const std::string &name, const std::string &arg)
 
 template <> void TypedOpt<uint>::parse(std::string arg)
 {
-	this->set(_stoul(this->name_, arg));
+	this->set(_stoul<uint>(this->name_, arg));
 }
 
 template <> void TypedOpt<uint16_t>::parse(std::string arg)
 {
-	this->set((uint16_t)_stoul(this->name_, arg));
+	this->set(_stoul<uint16_t>(this->name_, arg));
 }
 
 template <> void TypedOpt<double>::parse(std::string arg)

@@ -102,6 +102,8 @@ TEST(_timeout, PTTIME(.001))
 static SharedMem<std::atomic_bool> _sleeping;
 TEST(_sleep)
 {
+	signal(SIGINT, SIG_IGN);
+	signal(SIGTERM, SIG_IGN);
 	_sleeping->store(true);
 	std::this_thread::sleep_for(std::chrono::seconds(10));
 }
@@ -215,7 +217,7 @@ TEST(jobsTerminateFromSignal)
 
 	pt_eq(f.pid(), err);
 	pt(WIFSIGNALED(status));
-	pt_eq(WTERMSIG(status), SIGTERM);
+	pt_eq(WTERMSIG(status), SIGKILL);
 }
 
 static void _fail(bool fork)

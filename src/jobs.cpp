@@ -61,7 +61,7 @@ void Job::finish()
 	this->test_ = nullptr;
 }
 
-void BasicSharedJob::exit(int)
+void BasicSharedJob::_exit(int)
 {
 	if (std::this_thread::get_id() != this->thid_) {
 		printf("************************************************************\n"
@@ -113,7 +113,7 @@ bool BasicJob::run(sp<const Test> test)
 	return true;
 }
 
-void ForkingSharedJob::exit(int status)
+void ForkingSharedJob::_exit(int status)
 {
 	/*
 	 * LLVM's cov is not fork-safe. So if forking and running with llvm cov,
@@ -351,9 +351,6 @@ void _pt_fail(const char *format, ...)
 
 	job->env_->failed_ = true;
 	job->exit(255);
-
-	// g++ isn't convinced this is function is noreturn otherwise...
-	abort();
 }
 
 void _pt_mark(const char *file, const char *func, const size_t line)

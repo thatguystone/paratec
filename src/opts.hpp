@@ -165,8 +165,8 @@ public:
 	}
 
 	void parse(std::string) override;
-	void usage(const std::vector<const char *> &args,
-			   const std::vector<Opt *> &opts);
+	[[noreturn]] void usage(const std::vector<const char *> &args,
+							const std::vector<Opt *> &opts);
 };
 
 class JobsOpt : public TypedOpt<uint>
@@ -253,7 +253,7 @@ public:
 
 	void parse(std::string v) override
 	{
-		this->v_ += std::max((size_t)1, v.size());
+		this->v_ += std::max<uint>(1, (uint)v.size());
 	}
 
 	int argType() override
@@ -327,9 +327,9 @@ public:
 	 */
 	void parse(std::vector<const char *> args);
 
-	void usage(const Err &err,
-			   const std::vector<const char *> &args,
-			   const std::vector<Opt *> &opts)
+	[[noreturn]] void usage(const Err &err,
+							const std::vector<const char *> &args,
+							const std::vector<Opt *> &opts)
 	{
 		if (err.msg_.size() > 0) {
 			printf("Error: %s\n", err.msg_.c_str());

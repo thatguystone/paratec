@@ -247,8 +247,9 @@ void Results::dump()
 	std::sort(this->results_.begin(), this->results_.end());
 
 	format(this->os_, "%d%%: ",
-		   this->enabled_ == 0 ? 100 : (int)(((double)this->passes_
-											  / this->enabled_) * 100));
+		   this->enabled_ == 0 ? 100
+							   : (int)((((double)this->passes_)
+										/ ((double)this->enabled_)) * 100));
 	format(this->os_, "of %zu tests run, ", this->enabled_);
 	format(this->os_, "%zu OK, ", this->passes_);
 	format(this->os_, "%zu errors, ", this->errors_);

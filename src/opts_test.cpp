@@ -40,6 +40,18 @@ TESTV(optsVerbose, _verbose)
 	pt_eq(opts.verbose_.get(), _t->cnt);
 }
 
+TEST(optsHelp, PTEXIT(1))
+{
+	Opts opts;
+	opts.parse({ "paratec", "-h" });
+}
+
+TEST(optsUnknown, PTEXIT(1))
+{
+	Opts opts;
+	opts.parse({ "paratec", "--girls-just-want-to-have-fun" });
+}
+
 TEST(optsFilter)
 {
 	setenv("PTFILTER", "0", 1);
@@ -50,6 +62,13 @@ TEST(optsFilter)
 	// pt::eq(opts.filter_.filts_, std::vector<FilterOpt::F>({}));
 }
 
+TEST(optsJobs)
+{
+	Opts opts;
+	opts.parse({ "paratec", "--jobs", "4" });
+	pt_eq(opts.jobs_.get(), (uint)4);
+}
+
 TEST(optsPort)
 {
 	Opts opts;
@@ -57,12 +76,16 @@ TEST(optsPort)
 	pt_eq(opts.port_.get(), (uint16_t)3333);
 }
 
-TEST(optsPortError)
+TEST(optsPortLimits, PTEXIT(1))
 {
 	Opts opts;
 	opts.parse({ "paratec", "--port", "-1" });
+}
 
-	pt_eq(std::numeric_limits<uint16_t>::max(), opts.port_.get());
+TEST(optsPortError, PTEXIT(1))
+{
+	Opts opts;
+	opts.parse({ "paratec", "--port", "abcd" });
 }
 
 TEST(optsTimeout)
@@ -72,9 +95,22 @@ TEST(optsTimeout)
 	pt_eq(opts.timeout_.get(), 3.3);
 }
 
+TEST(optsTimeoutInvalid, PTEXIT(1))
+{
+	Opts opts;
+	opts.parse({ "paratec", "-t", "merp" });
+}
+
 TEST(optsTimeoutError, PTEXIT(1))
 {
 	Opts opts;
 	opts.parse({ "paratec", "-t", "-1" });
+}
+
+TEST(optsTimeoutLimits, PTEXIT(1))
+{
+	Opts opts;
+	auto max = "99" + std::to_string(std::numeric_limits<double>::max());
+	opts.parse({ "paratec", "-t", max.c_str() });
 }
 }

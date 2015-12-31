@@ -129,7 +129,7 @@ extern "C" {
 /**
  * Mark the current test as skipped and stop running it immediately.
  */
-void pt_skip(void);
+__attribute__((noreturn)) void pt_skip(void);
 
 /**
  * When testing network services, it's useful to have a unique port for the
