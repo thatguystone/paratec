@@ -64,7 +64,8 @@
 #define PARATECV(test_fn, tvec, ...)                                           \
 	static void __PT_TEST(test_fn)(int64_t, uint32_t, typeof(tvec[0]) *);      \
 	__PARATEC(test_fn, PTI(0, (sizeof(tvec) / sizeof((tvec)[0]))),             \
-			  p->vec_ = tvec, p->vecisize_ = sizeof((tvec)[0]), ##__VA_ARGS__) \
+			  p->vec_ = tvec, p->vecisize_ = sizeof((tvec)[0]),                \
+			  p->ranged_ = 1, ##__VA_ARGS__)                                   \
 	static void __PT_TEST(test_fn)(int64_t _i __attribute__((unused)),         \
 								   uint32_t _N __attribute__((unused)),        \
 								   typeof(tvec[0]) *_t                         \
@@ -113,7 +114,8 @@
  * Run a test multiple times, over the given range.
  * Does: for (i = a; i < b; i++);
  */
-#define PTI(low, high) p->range_low_ = low, p->range_high_ = high
+#define PTI(low, high)                                                         \
+	p->range_low_ = low, p->range_high_ = high, p->ranged_ = 1
 
 /**
  * This test is a benchmark
@@ -159,6 +161,7 @@ struct _paratec {
 	int signal_num_;
 	double timeout_;
 	int expect_fail_;
+	int ranged_;
 	int64_t range_low_;
 	int64_t range_high_;
 	void *vec_;

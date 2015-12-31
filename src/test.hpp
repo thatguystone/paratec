@@ -93,7 +93,7 @@ public:
 	 */
 	inline bool isRanged() const
 	{
-		return this->range_low_ != 0 || this->range_high_ != 0;
+		return this->ranged_;
 	}
 
 	/**

@@ -11,8 +11,13 @@
 namespace pt
 {
 
-// @todo test C++-style asserts for everything
+// @todo test errno assertions
 
-// @todo test vector test with 0 items (should not execute at all)
-// @todo test calling run on same pt::Main() multiple times.
+PARATEC(asserts)
+{
+	uint32_t a = 1;
+	uint64_t b = 2;
+
+	pt_eq(a, b);
+}
 }

@@ -61,6 +61,25 @@ TEST(_iterName, PTI(-5, 5))
 	pt_set_iter_name("fun:%" PRId64, _i);
 }
 
+TEST(_notIterSetName)
+{
+	pt_set_iter_name("what am i doing?");
+}
+
+TEST(_noIters0, PTI(0, 0))
+{
+}
+
+TEST(_noIters1, PTI(1, 1))
+{
+}
+
+static int _empty[] = {};
+
+TESTV(_emptyVector, _empty)
+{
+}
+
 TEST(_threadedAssertion)
 {
 	std::thread th([]() { pt_fail("from another thread"); });
@@ -136,6 +155,16 @@ TEST(jobsForkFiltered)
 	});
 
 	pt_in(e.stdout_.c_str(), "100%: of 1");
+}
+
+TEST(jobsForkNoCapture)
+{
+	// @todo
+}
+
+TEST(jobsBench)
+{
+	// @todo
 }
 
 TEST(jobsAbortSignal, PTSIG(6))
@@ -302,13 +331,14 @@ static void _setIterName(bool fork)
 		args.push_back("--nofork");
 	}
 
-	Main m({ MKTEST(_iterName) });
-	auto res = m.run(out, args);
+	Main m({ MKTEST(_iterName), MKTEST(_notIterSetName) });
+	m.run(out, args);
 
 	auto s = out.str();
 	pt_in(s, "PASS : _iterName:-1:fun:-1");
 	pt_in(s, "PASS : _iterName:0:fun:0");
 	pt_in(s, "PASS : _iterName:4:fun:4");
+	pt_in(s, "PASS : _notIterSetName (");
 }
 
 TEST(jobsForkSetIterName)
@@ -319,5 +349,26 @@ TEST(jobsForkSetIterName)
 TEST(jobsNoForkSetIterName)
 {
 	_setIterName(false);
+}
+
+TEST(jobsEmptyIterTest)
+{
+	std::stringstream out;
+
+	Main m({ MKTEST(_noIters0), MKTEST(_noIters1), MKTEST(_emptyVector) });
+	m.run(out, { "paratec", "--nofork" });
+
+	auto s = out.str();
+	pt_in(s, "100%: of 0 tests");
+}
+
+TEST(jobsCaptureNullByteInOutput)
+{
+// @todo
+}
+
+TEST(jobsFixtures)
+{
+	// @todo test setup, teardown, cleanup
 }
 }

@@ -6,12 +6,10 @@
  * http://opensource.org/licenses/MIT
  */
 
-#include "paratec.h"
-#include <stdlib.h>
+#include "util_test.hpp"
 
-// @todo test c assertions
-// @todo test wait_for
-
-PARATEC(asserts)
+namespace pt
 {
+
+// @todo test calling run on same pt::Main() multiple times.
 }
