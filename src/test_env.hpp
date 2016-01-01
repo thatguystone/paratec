@@ -16,7 +16,7 @@ namespace pt
 
 /**
  * May only contain data elements that are safe to share across processes;
- * aka. only primitive types and constant-sized arrays.
+ * aka. only primitive types and constant-sized arrays of primitives.
  */
 struct TestEnv {
 	static constexpr int kSize = 2048;
