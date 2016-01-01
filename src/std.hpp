@@ -14,6 +14,7 @@
 #define INDENT "    "
 #define NELS(a) (sizeof(a) / sizeof((a)[0]))
 
+typedef unsigned int uint;
 template <typename T> using sp = std::shared_ptr<T>;
 
 template <typename T, typename... Args>

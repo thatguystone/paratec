@@ -14,6 +14,7 @@
 #include <vector>
 #include "fork.hpp"
 #include "results.hpp"
+#include "std.hpp"
 #include "test.hpp"
 #include "time.hpp"
 #include "util.hpp"

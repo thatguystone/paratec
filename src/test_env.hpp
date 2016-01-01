@@ -9,6 +9,7 @@
 
 #pragma once
 #include "paratec.h"
+#include "std.hpp"
 
 namespace pt
 {
