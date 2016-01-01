@@ -286,6 +286,7 @@ __PT_ASSERT(sni, const char *);
 #else
 }
 
+#include <functional>
 #include <string>
 
 namespace std
