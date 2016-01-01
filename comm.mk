@@ -14,7 +14,7 @@ ifeq ($(LLVM),llvm)
 	CXX = clang++
 	export GCOV = llvm-cov
 else
-	undefine GCOV
+	override undefine GCOV
 endif
 
 #
