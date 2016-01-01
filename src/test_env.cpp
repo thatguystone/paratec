@@ -17,6 +17,8 @@ void TestEnv::reset(uint id, const char *test_name, const char *func_name)
 	this->id_ = id;
 	this->failed_ = false;
 	this->skipped_ = false;
+	this->bench_iters_ = 0;
+	this->bench_ns_op_ = 0;
 	this->iter_name_[0] = '\0';
 	this->last_mark_[0] = '\0';
 	this->fail_msg_[0] = '\0';

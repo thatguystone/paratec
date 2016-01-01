@@ -24,6 +24,12 @@ double toSeconds(duration d)
 	return std::chrono::duration_cast<std::chrono::duration<double>>(d).count();
 }
 
+uint64_t toNanoSeconds(duration d)
+{
+	return (uint64_t)std::chrono::duration_cast<std::chrono::nanoseconds>(d)
+		.count();
+}
+
 duration toDuration(double secs)
 {
 	return std::chrono::duration_cast<duration>(

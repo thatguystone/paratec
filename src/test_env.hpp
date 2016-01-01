@@ -21,6 +21,11 @@ struct TestEnv {
 	static constexpr int kSize = 2048;
 
 	/**
+	 * The id of the job that this test is running in
+	 */
+	uint id_;
+
+	/**
 	 * If this test failed
 	 */
 	bool failed_;
@@ -31,9 +36,10 @@ struct TestEnv {
 	bool skipped_;
 
 	/**
-	 * The id of the job that this test is running in
+	 * Bench results
 	 */
-	uint id_;
+	uint64_t bench_iters_;
+	uint64_t bench_ns_op_;
 
 	/**
 	 * Human-readable and print-friendly test name

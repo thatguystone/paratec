@@ -13,6 +13,7 @@
 #include "paratec.h"
 #include "std.hpp"
 #include "test_env.hpp"
+#include "time.hpp"
 
 namespace pt
 {
@@ -98,6 +99,14 @@ public:
 	}
 
 	/**
+	 * Check if this test is a benchmark
+	 */
+	inline bool isBenchmark() const
+	{
+		return this->bench_;
+	}
+
+	/**
 	 * Range of the test.
 	 */
 	inline std::tuple<bool, int64_t, int64_t> getRange() const
@@ -107,8 +116,12 @@ public:
 	}
 
 	/**
-	 * Run the test. If the test is not enabled, this just adds a skipped
-	 * result to Results and returns.
+	 * Run a benchmark
+	 */
+	time::duration bench(uint32_t n) const;
+
+	/**
+	 * Run the test. If this is a benchmark, run the given number of iters.
 	 */
 	void run() const;
 

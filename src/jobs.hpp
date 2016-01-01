@@ -65,6 +65,8 @@ class Job
 {
 	const uint id_;
 
+	void runBench();
+
 protected:
 	sp<const Opts> opts_;
 	sp<Results> rslts_;

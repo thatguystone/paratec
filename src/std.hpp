@@ -12,6 +12,7 @@
 #include <memory>
 
 #define INDENT "    "
+#define NELS(a) (sizeof(a) / sizeof((a)[0]))
 
 template <typename T> using sp = std::shared_ptr<T>;
 

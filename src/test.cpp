@@ -49,6 +49,26 @@ sp<const Test> Test::bindTo(int64_t i, sp<const Opts> opts) const
 	return test;
 }
 
+time::duration Test::bench(uint32_t n) const
+{
+	time::point start;
+	time::point end;
+
+	if (this->setup_ != NULL) {
+		this->setup_();
+	}
+
+	start = time::now();
+	this->fn_(this->i_, n, this->vitem_);
+	end = time::now();
+
+	if (this->teardown_ != NULL) {
+		this->teardown_();
+	}
+
+	return end - start;
+}
+
 void Test::run() const
 {
 	if (this->setup_ != NULL) {

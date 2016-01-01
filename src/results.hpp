@@ -11,10 +11,10 @@
 #include <string>
 #include <vector>
 #include "opts.hpp"
-#include "time.hpp"
 #include "std.hpp"
 #include "test.hpp"
 #include "test_env.hpp"
+#include "time.hpp"
 
 namespace pt
 {
@@ -141,6 +141,7 @@ class Results
 	size_t passes_ = 0;
 	size_t errors_ = 0;
 	size_t failures_ = 0;
+	size_t benches_ = 0;
 	size_t finished_ = 0;
 	size_t total_ = 0;
 	double tests_duration_ = 0.0;

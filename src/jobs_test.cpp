@@ -127,9 +127,38 @@ TEST(jobsVeryVerbose)
 	pt_in("_3", s);
 }
 
-TEST(jobsBench)
+TEST(_benchNever, PTBENCH())
 {
-	// @todo
+	pt_fail("this bench may never run");
+}
+
+TEST(jobsBenchNever)
+{
+	std::stringstream out;
+
+	Main m({ MKTEST(_benchNever) });
+	m.run(out, { "paratec", "-vvvv" });
+
+	auto s = out.str();
+	pt_in("Ran 0 benches.", s);
+}
+
+TEST(_bench, PTBENCH())
+{
+	pt_ne(_N, 0u);
+}
+
+TEST(jobsBenches)
+{
+	std::stringstream out;
+
+	Main m({ MKTEST(_bench) });
+	m.run(out, { "paratec", "-b" });
+
+	auto s = out.str();
+	pt_in("Ran 1 benches.", s);
+	pt_in("BENCH : _bench", s);
+	pt_in("ns/op)", s);
 }
 
 TEST(jobsAbortSignal, PTSIG(SIGABRT))

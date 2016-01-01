@@ -64,6 +64,8 @@ void Result::finalize(const TestEnv &te, sp<const Opts> opts)
 	const auto &v = opts->verbose_;
 
 	this->name_ = te.test_name_;
+	this->bench_iters_ = te.bench_iters_;
+	this->bench_ns_op_ = te.bench_ns_op_;
 
 	if (this->test_->isRanged() && *te.iter_name_ != '\0') {
 		this->name_ += ':';
@@ -208,6 +210,10 @@ void Results::record(const TestEnv &ti, Result r)
 	} else if (r.timedout_) {
 		summary = 'T';
 		this->failures_++;
+	} else if (r.bench_iters_ != 0) {
+		summary = 'B';
+		this->enabled_--;
+		this->benches_++;
 	} else {
 		summary = '.';
 		this->passes_++;
@@ -255,7 +261,8 @@ void Results::dump()
 	format(this->os_, "%zu errors, ", this->errors_);
 	format(this->os_, "%zu failures, ", this->failures_);
 	format(this->os_, "%zu skipped. ", this->skipped_);
-	format(this->os_, "Ran in %fs (tests used %fs)\n",
+	format(this->os_, "Ran %zu benches. ", this->benches_);
+	format(this->os_, "Took %fs (tests used %fs)\n",
 		   time::toSeconds(this->end_ - this->start_), this->tests_duration_);
 
 	for (const auto &r : this->results_) {

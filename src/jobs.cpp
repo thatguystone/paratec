@@ -12,6 +12,7 @@
 #include "err.hpp"
 #include "jobs.hpp"
 #include "signal.hpp"
+#include "time.hpp"
 
 namespace pt
 {
@@ -26,6 +27,72 @@ static std::string _bin;
  * forking tests.
  */
 static std::stack<SharedJob *> _jobs;
+
+static uint32_t _nearestPow10(uint32_t n)
+{
+	uint32_t i;
+	uint32_t res = 1;
+	uint32_t tens = 0;
+
+	while (n >= 10) {
+		n = n / 10;
+		tens++;
+	}
+
+	for (i = 0; i < tens; i++) {
+		res *= 10;
+	}
+
+	return res;
+}
+
+static uint32_t _roundUp(uint32_t n)
+{
+	static const uint32_t is[] = { 1, 2, 3, 5 };
+
+	uint32_t i;
+	uint32_t base = _nearestPow10(n);
+
+	for (i = 0; i < NELS(is); i++) {
+		if (n <= (is[i] * base)) {
+			return is[i] * base;
+		}
+	}
+
+	return 10 * base;
+}
+
+// This was pretty much lifted from Golang's benchmarking
+void Job::runBench()
+{
+	const auto max_dur = time::toDuration(this->opts_->bench_dur_.get());
+	static constexpr uint32_t kMmaxBenchIters = 1000000000;
+
+	uint32_t n = 1;
+	uint32_t last_n = 0;
+
+	time::duration dur{ 0 };
+	uint64_t ns_op;
+
+	while (n < kMmaxBenchIters && dur < max_dur) {
+		last_n = n;
+
+		dur = this->test_->bench(n);
+		ns_op = time::toNanoSeconds(dur) / n;
+
+		if (ns_op == 0) {
+			n = kMmaxBenchIters;
+		} else {
+			n = (uint32_t)(time::toNanoSeconds(max_dur) / ns_op);
+		}
+
+		n = std::max(std::min(n + n / 5, 100 * last_n), last_n + 1);
+		n = _roundUp(n);
+	}
+
+	this->sj_->env_->bench_iters_ = last_n;
+	this->sj_->env_->bench_ns_op_ = ns_op;
+}
 
 bool Job::prep(sp<const Test> test)
 {
@@ -46,8 +113,12 @@ bool Job::prep(sp<const Test> test)
 
 void Job::execute()
 {
-	// @todo put benchmark stuff here
-	this->test_->run();
+	if (!this->test_->isBenchmark()) {
+		this->test_->run();
+		return;
+	}
+
+	this->runBench();
 }
 
 void Job::finish()

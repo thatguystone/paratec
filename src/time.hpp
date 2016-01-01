@@ -24,6 +24,11 @@ typedef std::chrono::steady_clock::duration duration;
 point now();
 
 /**
+ * Conver the duration to nanoseconds
+ */
+uint64_t toNanoSeconds(duration d);
+
+/**
  * Convert the duration to seconds
  */
 double toSeconds(duration d);
