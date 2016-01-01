@@ -3,7 +3,7 @@
 *.gc*
 *.o
 *.pc
-*.so
+*.so*
 *.td
 *.to
 *.test
