@@ -71,8 +71,8 @@ void Job::runBench()
 	uint32_t n = 1;
 	uint32_t last_n = 0;
 
+	uint64_t ns_op = 0;
 	time::duration dur{ 0 };
-	uint64_t ns_op;
 
 	while (n < kMmaxBenchIters && dur < max_dur) {
 		last_n = n;
@@ -132,7 +132,7 @@ void Job::finish()
 	this->test_ = nullptr;
 }
 
-void BasicSharedJob::_exit(int)
+void BasicSharedJob::_exit(int status)
 {
 	if (std::this_thread::get_id() != this->thid_) {
 		printf("************************************************************\n"
@@ -148,7 +148,7 @@ void BasicSharedJob::_exit(int)
 			   this->env_->last_mark_, this->env_->fail_msg_);
 
 		fflush(stdout);
-		abort();
+		::exit(status);
 	}
 
 	longjmp(this->jmp_, 1);

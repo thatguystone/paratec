@@ -9,6 +9,7 @@
 #include <chrono>
 #include <fcntl.h>
 #include <poll.h>
+#include <signal.h>
 #include <sys/wait.h>
 #include <thread>
 #include "fork.hpp"

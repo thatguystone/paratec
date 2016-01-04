@@ -317,8 +317,10 @@ template <> struct not_equal_to<void *> {
 };
 
 // clang-format off
+template <> struct equal_to<nullptr_t> : equal_to<void *> {};
 template <> struct equal_to<const char *> : equal_to<const std::string> {};
 template <> struct equal_to<char *> : equal_to<const std::string> {};
+template <> struct not_equal_to<nullptr_t> : not_equal_to<void *> {};
 template <> struct not_equal_to<const char *> : not_equal_to<const std::string> {};
 template <> struct not_equal_to<char *> : not_equal_to<const std::string> {};
 template <> struct greater<const char *> : greater<const std::string> {};
@@ -329,8 +331,6 @@ template <> struct less<const char *> : less<const std::string> {};
 template <> struct less<char *> : less<const std::string> {};
 template <> struct less_equal<const char *> : less_equal<const std::string> {};
 template <> struct less_equal<char *> : less_equal<const std::string> {};
-template <> struct equal_to<nullptr_t> : equal_to<void *> {};
-template <> struct not_equal_to<nullptr_t> : not_equal_to<void *> {};
 // clang-format on
 }
 

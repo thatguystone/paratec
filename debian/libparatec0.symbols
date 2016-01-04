@@ -1,8 +1,0 @@
-libparatec.so.0 libparatec0 #MINVER#
- _pt_fail@Base 1.0.0
- _pt_mark@Base 1.0.0
- main@Base 1.0.0
- pt_get_name@Base 1.0.0
- pt_get_port@Base 1.0.0
- pt_set_iter_name@Base 1.0.0
- pt_skip@Base 1.0.0

@@ -1,4 +1,4 @@
-LIBPARATEC_0.0 {
+LIBPARATEC_1.0 {
 	global:
 		main;
 		pt_*;

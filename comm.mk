@@ -60,7 +60,7 @@ _PREFIX = /usr
 _LIB_DIR = $(_PREFIX)/lib/$(DEB_HOST_MULTIARCH)
 _BIN_DIR = $(_PREFIX)/bin
 _PKGCFG_DIR = $(_LIB_DIR)/pkgconfig
-_INCLUDE_DIR = $(_PREFIX)/include/$(LIB_NAME)
+_INCLUDE_DIR = $(_PREFIX)/include/$(NAME)
 
 PREFIX = $(DESTDIR)$(_PREFIX)
 LIB_DIR = $(DESTDIR)$(_LIB_DIR)
@@ -74,7 +74,32 @@ BIN_DIR = $(DESTDIR)$(_BIN_DIR)
 # ============================================================
 #
 
-INSTALL =
+define INST
+	@echo INST $(1) $(2)
+	@install -m 0644 $(1) $(2)
+endef
+
+define INST_BIN
+	@echo INST_BIN $(1) $(2)
+	@mkdir -p $(1)
+	@install -m 0755 $(1) $(2)
+endef
+
+define INST_INTO
+	@echo INST_INTO $(1) $(2)
+	@mkdir -p $(1)
+	@install -m 0644 -t $(1) $(2)
+endef
+
+define LN
+	@echo LN $(1) $(2)
+	@ln -s $(1) $(2)
+endef
+
+define UNINST
+	@echo UNINST $(1)
+	@rm -rf $(1)
+endef
 
 CLANG_FORMAT = true
 ifneq (,$(shell which clang-format))
@@ -126,7 +151,7 @@ CFLAGS_ALL += \
 	-Wshadow \
 	-Wundef \
 	-Wwrite-strings \
-	-fstack-protector \
+	-fstack-protector-strong \
 	--param=ssp-buffer-size=4 \
 	-D_FORTIFY_SOURCE=2 \
 	-march=native \
@@ -158,7 +183,7 @@ CXXFLAGS_BASE += \
 	-std=gnu++11
 
 # For an optimized (release) build
-CFLAGS += \
+CFLAGS = \
 	$(CFLAGS_BASE) \
 	-O3
 
@@ -168,7 +193,7 @@ CFLAGS_TEST += \
 	$(CFLAGS_TEST_BASE)
 
 # For an optimized (release) build
-CXXFLAGS += \
+CXXFLAGS = \
 	$(CXXFLAGS_BASE) \
 	-O3
 
@@ -230,7 +255,7 @@ endif
 
 # The following flags only work with GNU's ld
 ifneq (,$(findstring GNU ld,$(shell ld -v 2>&1)))
-	LDFLAGS += \
+	LDFLAGS_BASE += \
 		-fuse-ld=gold \
 		-Wl,-z,now \
 		-Wl,-z,relro
@@ -279,6 +304,7 @@ test-valgrind: $(TEST_BIN)
 	PTNOFORK=1 $(VALGRIND) ./$(TEST_BIN)
 
 clean::
+	@rm -f $(PC)
 	@rm -f $(SONAME) $(A)
 	@rm -f $(TEST_BIN)
 	@rm -f $(OBJECTS)
@@ -327,23 +353,23 @@ $(SONAME): $(BOBJECTS)
 
 %.o: %.c | _format
 	@echo '--- CC $@'
-	@$(CC) -c $(CFLAGS) -MF $*.d $(abspath $<) -o $@
+	@$(CC) -c $(CFLAGS) -MF $*.d $< -o $@
 
 %.o: %.cc | _format
 %.o: %.cpp | _format
 	@echo '--- CXX $@'
-	@$(CXX) -c $(CXXFLAGS) -MF $*.d $(abspath $<) -o $@
+	@$(CXX) -c $(CXXFLAGS) -MF $*.d $< -o $@
 
 %.to: %.c | _format
 	@echo '--- CC $@'
 	@rm -f $*.gcda $*.gcno
-	@$(CC) -c $(CFLAGS_TEST) -MF $*.td $(abspath $<) -o $@
+	@$(CC) -c $(CFLAGS_TEST) -MF $*.td $< -o $@
 
 %.to: %.cc | _format
 %.to: %.cpp | _format
 	@echo '--- CXX $@'
 	@rm -f $*.gcda $*.gcno
-	@$(CXX) -c $(CXXFLAGS_TEST) -MF $*.td $(abspath $<) -o $@
+	@$(CXX) -c $(CXXFLAGS_TEST) -MF $*.td $< -o $@
 
 ifeq (,$(findstring clean,$(MAKECMDGOALS)))
 -include $(DEP_INCS)

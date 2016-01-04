@@ -543,6 +543,6 @@ TEST(jobsAssertionLines)
 	pt_in("last test assert: test start", res.last_line_);
 
 	res = rslts.get("_assertMarkBeforeOut");
-	pt_in("last test assert: /", res.last_line_);
+	pt_in("last test assert: " __FILE__, res.last_line_);
 }
 }

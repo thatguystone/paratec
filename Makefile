@@ -1,8 +1,10 @@
 NAME = libparatec
-SOVERSION = 0
+SOVERSION = 1
 
 override PTFILTER += ,-_,
 export PTFILTER
+
+include comm.mk
 
 all:: $(SONAME) $(A) $(PC)
 
@@ -13,26 +15,18 @@ test-all:
 	$(MAKE) LLVM=llvm test
 
 install: all
-	$(INST_INTO) $(INCLUDE_DIR) $(SRC_DIR)/paratec.h
-	$(INST_INTO) $(LIB_DIR) $(A)
-	$(INST_INTO) $(LIB_DIR) $(SONAME)
-	$(INST_INTO) $(PKGCFG_DIR) $(PC)
-	$(LN) $(LIB_DIR)/$(SONAME) $(LIB_DIR)/$(SO)
+	$(call INST_INTO, $(INCLUDE_DIR), $(SRC_DIR)/paratec.h)
+	$(call INST_INTO, $(LIB_DIR), $(A))
+	$(call INST_INTO, $(LIB_DIR), $(SONAME))
+	$(call INST_INTO, $(PKGCFG_DIR), $(PC))
+	$(call LN, $(LIB_DIR)/$(SONAME), $(LIB_DIR)/$(SO))
 
 uninstall:
-	$(UNINST) $(INCLUDE_DIR)/paratec.h
-	$(UNINST) $(LIB_DIR)/$(SO)
-	$(UNINST) $(LIB_DIR)/$(SONAME)
-	$(UNINST) $(LIB_DIR)/$(A)
-	$(UNINST) $(PKGCFG_DIR)/$(PC)
-
-clean::
-	@rm -f $(PC)
-	@rm -f $(TEST_BINS)
-	@rm -f $(TEST_BINS:=.o)
-	@rm -f $(TEST_BINS:=.d)
-
-include comm.mk
+	$(call UNINST, $(INCLUDE_DIR)/paratec.h)
+	$(call UNINST, $(LIB_DIR)/$(SO))
+	$(call UNINST, $(LIB_DIR)/$(SONAME))
+	$(call UNINST, $(LIB_DIR)/$(A))
+	$(call UNINST, $(PKGCFG_DIR)/$(PC))
 
 #
 # Extra build rules
