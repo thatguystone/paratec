@@ -151,7 +151,6 @@ CFLAGS_ALL += \
 	-Wshadow \
 	-Wundef \
 	-Wwrite-strings \
-	-fstack-protector-strong \
 	--param=ssp-buffer-size=4 \
 	-D_FORTIFY_SOURCE=2 \
 	-march=native \
@@ -160,6 +159,11 @@ CFLAGS_ALL += \
 	-msse2 \
 	-MMD \
 	-I$(SRC_DIR)/
+
+# Travis' stuff is too outdated to use this flag. Awesome.
+ifndef TRAVIS
+	CFLAGS_ALL += -fstack-protector-strong
+endif
 
 # For both CFLAGS_TEST and CXXFLAGS_TEST
 CFLAGS_TEST_BASE += \
