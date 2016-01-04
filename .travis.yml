@@ -4,11 +4,16 @@ os:
   - linux
   - osx
 
-sudo: required
-dist: trusty
-
 env:
   - LLVM=no
   - LLVM=llvm
+
+sudo: required
+dist: trusty
+
+before_install:
+  - [ "$TRAVIS_OS_NAME" == "linux" ] && sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+  - [ "$TRAVIS_OS_NAME" == "linux" ] && sudo apt-get -qq update
+  - [ "$TRAVIS_OS_NAME" == "linux" ] && sudo apt-get -qq install gcc-5 g++-5
 
 script: make test
