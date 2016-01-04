@@ -21,10 +21,10 @@ sp<const Test> Test::bindTo(int64_t i, sp<const Opts> opts) const
 
 	// By default, not disabled. Once matched in a negative filter, however,
 	// can't be re-enabled.
-	bool disabled = false;
+	bool disable = false;
 
 	// If there are no filters, everything is enabled.
-	bool enabled = filts.size() == 0;
+	bool enable = filts.size() == 0;
 
 	// Every test becomes disabled by default if a single positive filter is
 	// given. Only things that pass the filter run.
@@ -35,15 +35,15 @@ sp<const Test> Test::bindTo(int64_t i, sp<const Opts> opts) const
 
 		hasPosFilt |= !f.neg_;
 		if (matches) {
-			disabled |= f.neg_;
-			enabled |= !f.neg_;
+			disable |= f.neg_;
+			enable |= !f.neg_;
 		}
 	}
 
 	if (hasPosFilt) {
-		test->enabled_ = !disabled && enabled;
+		test->enabled_ = !disable && enable;
 	} else {
-		test->enabled_ = !disabled;
+		test->enabled_ = !disable;
 	}
 
 	return test;
