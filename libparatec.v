@@ -11,4 +11,3 @@ LIBPARATEC_1.0 {
 	local:
 		*;
 };
-
