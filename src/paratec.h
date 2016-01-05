@@ -299,16 +299,6 @@ PT_PRINTF(3, 4) void _pt_ner(const ssize_t err,
 namespace std
 {
 
-std::string to_string(const char *t);
-std::string to_string(const std::string &t);
-std::string to_string(nullptr_t &);
-template <typename T> std::string to_string(const T *t)
-{
-	char buff[128];
-	snprintf(buff, sizeof(buff), "%p", t);
-	return buff;
-}
-
 template <> struct equal_to<void *> {
 	inline bool operator()(const void *lhs, const void *rhs) const
 	{
@@ -355,6 +345,22 @@ namespace assert
 
 #define PT_FAIL_BUFF 8192
 
+template <typename T> std::string toString(T t)
+{
+	return std::to_string(t);
+}
+
+template <typename T> std::string toString(T *t)
+{
+	char buff[128];
+	snprintf(buff, sizeof(buff), "%p", t);
+	return buff;
+}
+
+std::string toString(const char *t);
+std::string toString(const std::string &t);
+std::string toString(std::nullptr_t &);
+
 PT_PRINTF(2, 3) void _fail(const char *extra_msg, const char *msg, ...);
 
 template <typename T, typename U, class Op>
@@ -368,8 +374,8 @@ PT_PRINTF(4, 0) void _check(T expect,
 		char buff[PT_FAIL_BUFF];
 		vsnprintf(buff, sizeof(buff), msg, args);
 
-		_fail(buff, "Expected `%s` %s `%s`", std::to_string(expect).c_str(), op,
-			  std::to_string(got).c_str());
+		_fail(buff, "Expected `%s` %s `%s`", toString(expect).c_str(), op,
+			  toString(got).c_str());
 	}
 }
 

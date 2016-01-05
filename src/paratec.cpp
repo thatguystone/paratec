@@ -12,25 +12,6 @@
 #include "paratec.h"
 #include "test_env.hpp"
 
-namespace std
-{
-
-std::string to_string(const char *t)
-{
-	return t;
-}
-
-std::string to_string(const std::string &t)
-{
-	return t;
-}
-
-std::string to_string(nullptr_t &)
-{
-	return "(nil)";
-}
-}
-
 #define THUNK(cname, type, human, opClass, ...)                                \
 	extern "C" void _pt_##cname(type expect, type got, const char *msg, ...)   \
 	{                                                                          \
@@ -52,6 +33,22 @@ namespace pt
 {
 namespace assert
 {
+
+std::string toString(const char *t)
+{
+	return t;
+}
+
+std::string toString(const std::string &t)
+{
+	return t;
+}
+
+std::string toString(std::nullptr_t &)
+{
+	return "(nil)";
+}
+
 void _fail(const char *extra_msg, const char *msg, ...)
 {
 	char buff[PT_FAIL_BUFF];

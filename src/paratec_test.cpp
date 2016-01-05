@@ -30,16 +30,25 @@ TEST(_custom2)
 	pt_eq(nullptr, (void *)123, "mah pointers");
 }
 
+TEST(_custom3)
+{
+	pt_eq(nullptr, (const void *)124, "moar pointers");
+}
+
 TEST(customMessages)
 {
 	std::stringstream out;
 
-	Main m({ MKTEST(_custom0), MKTEST(_custom1), MKTEST(_custom2) });
+	Main m({ MKTEST(_custom0),
+			 MKTEST(_custom1),
+			 MKTEST(_custom2),
+			 MKTEST(_custom3) });
 	m.run(out, { "paratec" });
 
 	auto s = out.str();
 	pt_in("Expected `1` == `-1` :: i failed 1234", s);
 	pt_in("Expected `yes` == `no` :: what? no", s);
 	pt_in("Expected `(nil)` == `0x7b` :: mah pointers", s);
+	pt_in("Expected `(nil)` == `0x7c` :: moar pointers", s);
 }
 }

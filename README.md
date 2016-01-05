@@ -1,13 +1,18 @@
 # Paratec: Parallel Testing for C/C++ [![Build Status](https://travis-ci.org/thatguystone/paratec.svg?branch=master)](https://travis-ci.org/thatguystone/paratec)
 
-Unit testing is hard enough already, so let's try to make it a bit easier.
-Paratec is a simple unit testing framework that stays out of your way while
-making your life easier. Tests are always run in isolation from each other and
-in parallel, so everything is always fast and safe.
+Unit testing is hard enough already, so let's try to make it a bit easier. Paratec is a simple unit testing framework that stays out of your way while making your life easier. Tests are always run in isolation from each other and in parallel, so everything is always fast and safe.
 
 ## Quick Start
 
-FIXME: update installation details
+### Debian-based
+
+1. Add `deb http://deb.stoney.io/ testing/` to your sources.list.
+1. Install the archive keys: `sudo apt-get install stoney.io-archive-keyring`
+1. `sudo aptitude install libparatec-dev`
+
+### From Source
+
+Grab the source, and a simple `sudo make install` will get everything in place.
 
 ## Let's get testing
 
@@ -95,40 +100,21 @@ The function given to `PTCLEANUP` must be of type `void (*fn)()`, and it may use
 
 ### Table Tests
 
-Table tests are useful for when you need to test a single thing with a bunch
-of different inputs. Rather than copy-pasting the same code over and over
-again, modifying only the arguments, you can create a table (as seen in the
-example) and have paratec iterate it for you. This has the advantage that each
-iteration runs in its own environment and that each iteration is a separate
-test.
+Table tests are useful for when you need to test a single thing with a bunch of different inputs. Rather than copy-pasting the same code over and over again, modifying only the arguments, you can create a table (as seen in the example) and have paratec iterate it for you. This has the advantage that each iteration runs in its own environment and that each iteration is a separate test.
 
-`PARATECV(test_name, _table_vector)` is used to create such a test, and it
-takes all the same arguments as `PARATEC()`.
+`PARATECV(test_name, _table_vector)` is used to create such a test, and it takes all the same arguments as `PARATEC()`.
 
 ### Benchmarks
 
-Benchmarks are, by default, skipped. In order to run them, they must be
-enabled with `-b`/`--bench`/`PTBENCH=1`. Benchmarks are like any other test,
-except that they must run what they want to time in a loop (as in the
-example).
+Benchmarks are, by default, skipped. In order to run them, they must be enabled with `-b`/`--bench`/`PTBENCH=1`. Benchmarks are like any other test, except that they must run what they want to time in a loop (as in the example).
 
-A benchmark may be called multiple times as Paratec tries to scale the test to
-get good timings. Unlike a normal test, however, any cleanup function given is
-run _after_ all iterations and timings have finished. Also, any cleanup and
-teardown functions will be called directly before and after every set of
-iterations; that is, setup and teardown functions may be called multiple times
-for each benchmark.
+A benchmark may be called multiple times as Paratec tries to scale the test to get good timings. Unlike a normal test, however, any cleanup function given is run _after_ all iterations and timings have finished. Also, any cleanup and teardown functions will be called directly before and after every set of iterations; that is, setup and teardown functions may be called multiple times for each benchmark.
 
 ## API
 
 `uint16_t pt_get_port(uint8_t i)`
 
-When testing a network server, picking out ports for running tons of tests
-simultaneously is error-prone. For that reason, you can find the awesome
-function `pt_get_port(uint8_t i)` at your disposal. This function will give
-you a unique port for your test, based on the index given. If you only need 1
-port, then `i` will be 0; if you need more ports, increment `i` until you have
-what you need. All ports given are unique amongst all tests.
+When testing a network server, picking out ports for running tons of tests simultaneously is error-prone. For that reason, you can find the awesome function `pt_get_port(uint8_t i)` at your disposal. This function will give you a unique port for your test, based on the index given. If you only need 1 port, then `i` will be 0; if you need more ports, increment `i` until you have what you need. All ports given are unique amongst all tests.
 
 `void pt_skip()`
 
@@ -140,16 +126,11 @@ Get the name of the currently-running test.
 
 `void pt_set_iter_name(const char *format, ...)`
 
-When running an iteration test, sometimes the name `test-name:1` (iteration
-with index 1) isn't helpful. This function allows you to change it to
-something like `test-name:good-description`. Use it like you would any
-printf() function.
+When running an iteration test, sometimes the name `test-name:1` (iteration with index 1) isn't helpful. This function allows you to change it to something like `test-name:good-description`. Use it like you would any printf() function.
 
 ## Assertions
 
-All assertions generate helpful messages on failure, but sometimes you want to
-extra debugging info. All assertions accept extra format arguments; for
-example:
+All assertions generate helpful messages on failure, but sometimes you want to extra debugging info. All assertions accept extra format arguments; for example:
 
 ```c
 pt_eq(1, 2); // No extra message
@@ -179,9 +160,13 @@ pt_eq(1, 2, "something isn't right: %d", var); // Some extra output
 * `pt_meq(expect, got, len)`: assert that two memory segments are equal
 * `pt_mne(expect, got, len)`: assert that two memory segments aren't equal
 
-### Errno assertion
+### Errno Assertions
 
 * `pt_ner(err)`: assert err != -1, where a is some error return value. The error message includes strerror(errno).
+
+### C++ Assertions
+
+For C++, you may extend the value assertions using C++'s operator overrides. For this to work properly, for each type you intend to compare, you need to overload `pt::assert::toString(Type t)` so that your type can be printed into failure messages.
 
 ## Running Tests
 
@@ -202,15 +187,11 @@ The paratec binary comes equipped with the following options:
 
 ### Test Filtering
 
-Test cases can be filtered for selective runs. Filters match on test name
-prefix; that is, a filter of `test` will match both `test_one`and `test_two`,
-whereas a filter of `test_two` will _only_ match `test_two`.
+Test cases can be filtered for selective runs. Filters match on test name prefix; that is, a filter of `test` will match both `test_one`and `test_two`, whereas a filter of `test_two` will _only_ match `test_two`.
 
-Tests may also be negatively filtered, such that a filter of `-test_two`
-would, in the previous example, only match `test_one`.
+Tests may also be negatively filtered, such that a filter of `-test_two` would, in the previous example, only match `test_one`.
 
-Filters may be comma-separated, given multiple times, or any combination
-thereof.
+Filters may be comma-separated, given multiple times, or any combination thereof.
 
 The following are all valid filters:
 
@@ -236,34 +217,22 @@ There are 3 levels of verbosity:
 A lot of information is output on failure. Let's take the output of the `nofork` test as an example:
 
 ```
-FFFF..
-33%: of 6 tests run, 2 OK, 0 errors, 4 failures, 0 skipped. Ran in 0.001670s
-     FAIL : nofork_fail_outside (0.000905s) : test/nofork.c:18 (last test assert: test start) : here
-     FAIL : nofork_fail_outside_marked (0.000813s) : test/nofork.c:18 (last test assert: test/nofork.c:53) : here
-     FAIL : nofork_failure (0.000735s) : test/nofork.c:37 : Expected `a` == `b`
-     FAIL : nofork_mark (0.000583s) : test/nofork.c:43 : Expected `a` == `b`
+FFF..
+0%: of 5 tests run, 2 OK, 0 errors, 3 failures, 0 skipped. Ran 0 benches. Took 0.337784s (tests used 0.610332s)
+    FAIL : a (0.337354s) : src/file.cpp:517 (last test assert: test start) : Expected `0` == `1`
+    FAIL : b (0.150189s) : src/file.cpp:517 (last test assert: src/file.cpp:527) : Expected `0` == `1`
+    FAIL : c (0.122789s) : src/file.c:512 : Expected `0` == `1`
 ```
 
-The first line is a summary that prints while the test is running. It shows
-that 4 tests failed (`F`) and 2 passed (`.`).
+The first line is a summary that prints while the test is running. It shows that 3 tests failed (`F`) and 2 passed (`.`).
 
-The next line gives a complete summary once all tests have finished, and it
-includes the total runtime.
+The next line gives a complete summary once all tests have finished, and it includes the total runtime.
 
-The next 4 lines highlight the failed tests, showing the test name, how long
-the test took to run, and where the test failed. `nofork_fail_outside` is a
-test where the assertion fails outside of the testing function; no assertions
-were ever hit inside the testing function. To note this, it outputs the
-location of the failure, and the last run assertion in the test case in
-parenthesis (in this case, "test start").
+The next 3 lines highlight the failed tests, showing the test name, how long the test took to run, and where the test failed. `a` is a test where the assertion fails outside of the testing function; no assertions were ever hit inside the testing function. To note this, it outputs the location of the failure, and the last run assertion in the test case in parenthesis (in this case, "test start").
 
-Like the first failure, the second one failed outside the test function, but
-in this case, the test function executed an assertion before calling the
-failing function. This is noted by the location of the failed assertion
-followed by the last assertion in the test function in parenthesis.
+Like `a`, `b` failed outside the test function, but in this case, the test function executed an assertion before calling the failing function. This is noted by the location of the failed assertion followed by the last assertion in the test function in parenthesis.
 
-The final two tests fail inside their testing functions, and they very simply
-output where the test failed.
+The final test (`c`) failed inside its testing functions, and it very simply output where it failed.
 
 ## Supported Platforms
 
