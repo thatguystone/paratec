@@ -93,7 +93,7 @@ endef
 
 define LN
 	@echo LN $(1) $(2)
-	@ln -s $(1) $(2)
+	@ln --relative -s $(1) $(2)
 endef
 
 define UNINST
