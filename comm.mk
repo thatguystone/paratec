@@ -60,7 +60,7 @@ _PREFIX = /usr
 _LIB_DIR = $(_PREFIX)/lib/$(DEB_HOST_MULTIARCH)
 _BIN_DIR = $(_PREFIX)/bin
 _PKGCFG_DIR = $(_LIB_DIR)/pkgconfig
-_INCLUDE_DIR = $(_PREFIX)/include/$(NAME)
+_INCLUDE_DIR = $(_PREFIX)/include
 
 PREFIX = $(DESTDIR)$(_PREFIX)
 LIB_DIR = $(DESTDIR)$(_LIB_DIR)
@@ -142,7 +142,6 @@ CFLAGS_ALL += \
 	-fPIC \
 	-Wall \
 	-Wcast-qual \
-	-Wconversion \
 	-Wdisabled-optimization \
 	-Werror \
 	-Wextra \
