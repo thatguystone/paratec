@@ -10,10 +10,12 @@
  */
 
 #pragma once
+#include <errno.h>
 #include <inttypes.h>
 #include <sched.h>
 #include <stdarg.h>
 #include <string.h>
+#include <unistd.h>
 
 #define PT_SECTION_NAME "paratec"
 
@@ -234,6 +236,11 @@ __PT_FNS
 __PT_ASSERT(sin, const char *);
 __PT_ASSERT(sni, const char *);
 
+PT_PRINTF(3, 4) void _pt_ner(const ssize_t err,
+							 const int eno,
+							 const char *msg,
+							 ...);
+
 #ifndef __cplusplus
 
 // Clang really messes these up...
@@ -348,6 +355,8 @@ namespace assert
 
 #define PT_FAIL_BUFF 8192
 
+PT_PRINTF(2, 3) void _fail(const char *extra_msg, const char *msg, ...);
+
 template <typename T, typename U, class Op>
 PT_PRINTF(4, 0) void _check(T expect,
 							U got,
@@ -357,20 +366,10 @@ PT_PRINTF(4, 0) void _check(T expect,
 {
 	if (!Op()(expect, got)) {
 		char buff[PT_FAIL_BUFF];
-		buff[0] = '\0';
+		vsnprintf(buff, sizeof(buff), msg, args);
 
-		/*
-		 * msg[1]: used to suppress errors about empty format strings; they're
-		 * meant to be empty as a work-around to having something like pt_eq()
-		 * and pt_eq_msg().
-		 */
-		if (msg[1] != '\0') {
-			vsnprintf(buff, sizeof(buff), msg, args);
-		}
-
-		_pt_fail("Expected `%s` %s `%s`%s%s", std::to_string(expect).c_str(),
-				 op, std::to_string(got).c_str(), msg[1] == '\0' ? "" : " ::",
-				 buff);
+		_fail(buff, "Expected `%s` %s `%s`", std::to_string(expect).c_str(), op,
+			  std::to_string(got).c_str());
 	}
 }
 
@@ -474,3 +473,16 @@ __PT_FNS
 #define pt_ni(needle, haystack, ...)                                           \
 	pt_mark();                                                                 \
 	__PT_IN(ni, needle, haystack, ##__VA_ARGS__)
+
+#define pt_meq(expect, got, len, ...)                                          \
+	pt(memcmp(expect, got, len) == 0, ##__VA_ARGS__)
+
+#define pt_mne(expect, got, len, ...)                                          \
+	pt(memcmp(expect, got, len) != 0, ##__VA_ARGS__)
+
+#define pt_ner(err, ...)                                                       \
+	({                                                                         \
+		int __pt_eno = errno;                                                  \
+		pt_mark();                                                             \
+		_pt_ner(err, __pt_eno, " " __VA_ARGS__);                               \
+	})

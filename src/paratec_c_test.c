@@ -9,7 +9,7 @@
 #include "paratec.h"
 #include <stdlib.h>
 
-PARATEC(asserts)
+PARATEC(assertsBasic)
 {
 	pt_eq(0, 0);
 	pt_eq('a', 'a');
@@ -33,10 +33,42 @@ PARATEC(asserts)
 
 	pt_in("cde", "abcdefgh");
 	pt_ni("xyz", "abcdefgh");
+}
 
-	// @todo errno assertions
-	// pt_ner(0);
-	// pt_ner(0, "that's not an error");
+PARATEC(assertsMem)
+{
+	char a[16];
+	char b[32];
+
+	memset(a, 0, sizeof(a));
+	memset(b, 0, sizeof(b));
+
+	pt_meq(a, b, sizeof(a), "extra halp");
+
+	memset(b, 1, sizeof(b));
+	pt_mne(a, b, sizeof(a), "extra halp");
+}
+
+PARATEC(assertsMemFail, PTFAIL())
+{
+	char a[16];
+	char b[32];
+
+	memset(a, 0, sizeof(a));
+	memset(b, 1, sizeof(b));
+	pt_meq(a, b, sizeof(a), "extra halp");
+}
+
+PARATEC(assertsErrno)
+{
+	pt_ner(0);
+	pt_ner(0, "that's not an error");
+}
+
+PARATEC(assertsErrnoFail, PTFAIL())
+{
+	errno = EAGAIN;
+	pt_ner(-1, "oh noes, it failz!");
 }
 
 PARATEC(assertsFailure, PTFAIL())

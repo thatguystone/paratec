@@ -47,3 +47,53 @@ __PT_FNS
 
 THUNK(sin, const char *, in, pt::assert::In, const char *);
 THUNK(sni, const char *, not in, pt::assert::NotIn, const char *);
+
+namespace pt
+{
+namespace assert
+{
+void _fail(const char *extra_msg, const char *msg, ...)
+{
+	char buff[PT_FAIL_BUFF];
+	const char *delim = " :: ";
+
+	/*
+	 * extra_msg[1]: used to suppress errors about empty format strings;
+	 * they're meant to be empty as a work-around to having something like
+	 * pt_eq() and pt_eq_msg().
+	 */
+	if (extra_msg[0] == '\0' || extra_msg[1] == '\0') {
+		extra_msg = delim = "";
+	}
+
+	// Skip that workaround space, if present
+	if (extra_msg[0] == ' ') {
+		extra_msg++;
+	}
+
+	va_list args;
+	va_start(args, msg);
+	vsnprintf(buff, sizeof(buff), msg, args);
+	va_end(args);
+
+	_pt_fail("%s%s%s", buff, delim, extra_msg);
+}
+}
+}
+
+extern "C" {
+void _pt_ner(const ssize_t got, const int eno, const char *msg, ...)
+{
+	if (got == -1) {
+		va_list args;
+		char buff[PT_FAIL_BUFF];
+
+		va_start(args, msg);
+		vsnprintf(buff, sizeof(buff), msg, args);
+		va_end(args);
+
+		pt::assert::_fail(buff, "Expected no error, got: (%d) %s", eno,
+						  strerror(eno));
+	}
+}
+}
