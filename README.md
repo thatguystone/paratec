@@ -139,8 +139,7 @@ pt_eq(1, 2, "something isn't right: %d", var); // Some extra output
 
 ### Basic Assertions
 
-* `pt(cond)`: assert that the condition is true
-* `pt_msg(cond, msg, ...)`: assert with a message with optional formatting
+* `pt(cond, ...)`: assert that the condition is true, with an optional message with formatting
 * `pt_fail(msg, ...)`: fail this test immediately
 * `pt_mark()`: mark the test as having hit this point (makes for nicer debugging output)
 

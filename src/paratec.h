@@ -208,7 +208,7 @@ void _pt_mark(const char *file, const char *func, const size_t line);
  */
 #define pt(cond, ...)                                                          \
 	if (!(cond)) {                                                             \
-		pt_fail("`%s` failed", PT_STR(cond));                                  \
+		pt_fail("`" PT_STR(cond) "` failed. " __VA_ARGS__);                    \
 	}                                                                          \
 	pt_mark()
 
