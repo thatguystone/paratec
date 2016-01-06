@@ -27,9 +27,6 @@ libparatec.so.1 libparatec1 #MINVER#
  _ZN2pt6assert6_checkImmSt4lessImEEEvT_T0_PKcS7_P13__va_list_tag@LIBPARATEC_1.0 2.0.0
  _ZN2pt6assert6_checkImmSt7greaterImEEEvT_T0_PKcS7_P13__va_list_tag@LIBPARATEC_1.0 2.0.0
  _ZN2pt6assert6_checkImmSt8equal_toImEEEvT_T0_PKcS7_P13__va_list_tag@LIBPARATEC_1.0 2.0.0
- _ZN2pt6assert8toStringEPKc@LIBPARATEC_1.0 2.0.0
- _ZN2pt6assert8toStringERDn@LIBPARATEC_1.0 2.0.0
- _ZN2pt6assert8toStringERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE@LIBPARATEC_1.0 2.0.0
  _ZNK2pt6assert2InIPKcS3_EclES3_RKS3_@LIBPARATEC_1.0 2.0.0
  _pt_eq@LIBPARATEC_1.0 2.0.0
  _pt_fail@LIBPARATEC_1.0 2.0.0

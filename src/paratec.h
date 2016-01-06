@@ -357,9 +357,20 @@ template <typename T> std::string toString(T *t)
 	return buff;
 }
 
-std::string toString(const char *t);
-std::string toString(const std::string &t);
-std::string toString(std::nullptr_t &);
+inline std::string toString(const char *t)
+{
+	return t;
+}
+
+inline std::string toString(const std::string &t)
+{
+	return t;
+}
+
+inline std::string toString(std::nullptr_t &)
+{
+	return "(nil)";
+}
 
 PT_PRINTF(2, 3) void _fail(const char *extra_msg, const char *msg, ...);
 

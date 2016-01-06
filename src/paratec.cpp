@@ -34,21 +34,6 @@ namespace pt
 namespace assert
 {
 
-std::string toString(const char *t)
-{
-	return t;
-}
-
-std::string toString(const std::string &t)
-{
-	return t;
-}
-
-std::string toString(std::nullptr_t &)
-{
-	return "(nil)";
-}
-
 void _fail(const char *extra_msg, const char *msg, ...)
 {
 	char buff[PT_FAIL_BUFF];
