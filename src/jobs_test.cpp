@@ -241,7 +241,11 @@ TEST(jobsTerminateFromSignal)
 
 	pt_eq(f.pid(), err);
 	pt(WIFSIGNALED(status));
-	pt_eq(WTERMSIG(status), SIGKILL);
+
+	// There's a race condition here with the paratec child sometimes
+	// terminating its child with SIGKILL and exiting before this process
+	// sends SIGKILL.
+	pt(WTERMSIG(status) == SIGTERM || WTERMSIG(status) == SIGKILL);
 }
 
 TEST(_fail)

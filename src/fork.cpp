@@ -214,13 +214,13 @@ int Fork::terminate(int *status)
 
 	killpg(this->pid_, SIGTERM);
 
-	for (i = 0; i < 5; i++) {
+	for (i = 0; i < 100; i++) {
 		err = waitpid(this->pid_, status, WNOHANG);
 		if (err != 0 && (WIFEXITED(*status) || WIFSIGNALED(*status))) {
 			return err;
 		}
 
-		std::this_thread::sleep_for(std::chrono::microseconds(100));
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
 
 	// If the process doesn't end, forcibly terminate
