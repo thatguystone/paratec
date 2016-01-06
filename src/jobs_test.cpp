@@ -141,6 +141,7 @@ TEST(jobsBenchNever)
 
 	auto s = out.str();
 	pt_in("Ran 0 benches.", s);
+	pt_in("DISABLED : _benchNever", s);
 }
 
 TEST(_bench, PTBENCH())

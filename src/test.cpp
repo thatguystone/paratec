@@ -46,6 +46,10 @@ sp<const Test> Test::bindTo(int64_t i, sp<const Opts> opts) const
 		test->enabled_ = !disable;
 	}
 
+	if (this->isBenchmark()) {
+		test->enabled_ &= test->opts_->bench_.get();
+	}
+
 	return test;
 }
 
