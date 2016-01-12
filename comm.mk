@@ -301,6 +301,7 @@ test:: $(TEST_BIN)
 	@$(GCOVR) \
 		--root=$(SRC_DIR)/ \
 		--exclude=.*_test.* \
+		--exclude=test/.* \
 		$(GCOVR_ARGS)
 
 test-valgrind: $(TEST_BIN)

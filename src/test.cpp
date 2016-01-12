@@ -13,7 +13,8 @@ namespace pt
 
 sp<const Test> Test::bindTo(int64_t i, sp<const Opts> opts) const
 {
-	void *vitem = this->vec_ == nullptr ? nullptr : ((char *)this->vec_);
+	void *vitem = this->vec_ == nullptr ? nullptr : ((char *)this->vec_)
+														+ (i * this->vecisize_);
 	auto test = mksp<Test>(static_cast<const _paratec &>(*this), i, vitem);
 
 	test->opts_ = std::move(opts);

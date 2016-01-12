@@ -66,4 +66,9 @@ TESTV(testFilter, _testFilter)
 	pt(test->bindTo(0, opts)->enabled() == _t->enabled_,
 	   "expected test to be %s", _t->enabled_ ? "enabled" : "disabled");
 }
+
+TESTV(testVec, _testFilter)
+{
+	pt_eq(_testFilter[_i].args_[1], _t->args_[1]);
+}
 }
