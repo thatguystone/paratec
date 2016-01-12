@@ -430,16 +430,19 @@ TEST(jobsNoForkSetIterName)
 
 TEST(_noIters0, PTI(0, 0))
 {
+	pt_fail("should not be called");
 }
 
 TEST(_noIters1, PTI(1, 1))
 {
+	pt_fail("should not be called");
 }
 
 static int _empty[] = {};
 
 TESTV(_emptyVector, _empty)
 {
+	pt_fail("should not be called");
 }
 
 TEST(jobsEmptyIterTest)
