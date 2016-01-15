@@ -62,11 +62,11 @@ _BIN_DIR = $(_PREFIX)/bin
 _PKGCFG_DIR = $(_LIB_DIR)/pkgconfig
 _INCLUDE_DIR = $(_PREFIX)/include
 
-PREFIX = $(DESTDIR)$(_PREFIX)
-LIB_DIR = $(DESTDIR)$(_LIB_DIR)
-PKGCFG_DIR = $(DESTDIR)$(_PKGCFG_DIR)
-INCLUDE_DIR = $(DESTDIR)$(_INCLUDE_DIR)
-BIN_DIR = $(DESTDIR)$(_BIN_DIR)
+PREFIX = $(abspath $(DESTDIR)$(_PREFIX))
+LIB_DIR = $(abspath $(DESTDIR)$(_LIB_DIR))
+PKGCFG_DIR = $(abspath $(DESTDIR)$(_PKGCFG_DIR))
+INCLUDE_DIR = $(abspath $(DESTDIR)$(_INCLUDE_DIR))
+BIN_DIR = $(abspath $(DESTDIR)$(_BIN_DIR))
 
 #
 # Commands
@@ -89,6 +89,15 @@ define INST_INTO
 	@echo INST_INTO $(1) $(2)
 	@mkdir -p $(1)
 	@install -m 0644 -t $(1) $(2)
+endef
+
+define INST_RECUR
+	echo INST_RECUR $(1) $(2); \
+	for f in $(2); do \
+		target="$(1)/$$(dirname $$f)"; \
+		mkdir -p $$target; \
+		install -m 0644 -t $$target $$f; \
+	done
 endef
 
 define LN
