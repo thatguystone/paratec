@@ -4,8 +4,10 @@ Section: devel
 Priority: optional
 Standards-Version: 3.9.6
 Build-Depends:
-	clang,
+	clang (>= 1:3.5),
 	debhelper (>= 9),
+	g++ (>= 4:4.9),
+	gcc (>= 4:4.9),
 
 Package: libparatec1
 Architecture: any
