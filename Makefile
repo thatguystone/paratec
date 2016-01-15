@@ -37,5 +37,6 @@ uninstall:
 $(PC): libparatec.pc.in
 	@echo '--- PC $@'
 	@sed \
-		-e 's|{PREFIX}|$(PREFIX)|' \
+		-e 's|{INCLUDE_DIR}|$(_INCLUDE_DIR)|' \
+		-e 's|{LIB_DIR}|$(_LIB_DIR)|' \
 		$< > $@

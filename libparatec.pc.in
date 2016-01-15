@@ -1,5 +1,5 @@
-includedir={PREFIX}/include
-libdir={PREFIX}/lib
+includedir={INCLUDE_DIR}
+libdir={LIB_DIR}
 
 Name: libparatec
 Description: Parallel Testing for C/C++: really fast and really simple unit testing
