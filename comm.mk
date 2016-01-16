@@ -4,18 +4,12 @@
 # https://github.com/thatguystone/commake
 
 #
-# Hide annoying messages
+# Make make a bit nicer to work with
 #
 MAKEFLAGS += --no-print-directory --no-builtin-rules
 
-LLVM ?= llvm
-ifeq ($(LLVM),llvm)
-	CC = clang
-	CXX = clang++
-	export GCOV = llvm-cov
-else
-	override undefine GCOV
-endif
+# More disabling implicit rules (seems to help for older versions of make)
+.SUFFIXES:
 
 #
 # Useful variables
@@ -37,6 +31,30 @@ endif
 
 ifeq ($(OS),Darwin)
 	export OS_OSX = 1
+endif
+
+ifdef CI
+	AUTO_BUILDER = 1
+endif
+
+# This is a bit janky...
+ifeq ($(HOME),/sbuild-nonexistent)
+	AUTO_BUILDER = 1
+endif
+
+# Only attempt to switch to clang when not running in an autobuild env: these
+# environments typically rely on being able to manipulate standard variables,
+# so don't mess with them.
+ifndef AUTO_BUILDER
+	LLVM ?= llvm
+
+	ifeq ($(LLVM),llvm)
+		CC = clang
+		CXX = clang++
+		export GCOV = llvm-cov
+	else
+		override undefine GCOV
+	endif
 endif
 
 ifndef NAME
@@ -245,24 +263,24 @@ endif
 
 ifneq (,$(PKG_CFG_LIBS))
 	CFLAGS_BASE += \
-		$$(pkg-config --cflags $(PKG_CFG_LIBS))
+		$(shell pkg-config --cflags $(PKG_CFG_LIBS))
 
 	CXXFLAGS_BASE += \
-		$$(pkg-config --cflags $(PKG_CFG_LIBS))
+		$(shell pkg-config --cflags $(PKG_CFG_LIBS))
 
-	LDFLAGS += \
-		$$(pkg-config --libs $(PKG_CFG_LIBS))
+	LDFLAGS_BASE += \
+		$(shell pkg-config --libs $(PKG_CFG_LIBS))
 endif
 
 ifneq (,$(PKG_CFG_TEST_LIBS))
 	CFLAGS_TEST += \
-		$$(pkg-config --cflags $(PKG_CFG_TEST_LIBS))
+		$(shell pkg-config --cflags $(PKG_CFG_TEST_LIBS))
 
 	CXXFLAGS_TEST += \
-		$$(pkg-config --cflags $(PKG_CFG_TEST_LIBS))
+		$(shell pkg-config --cflags $(PKG_CFG_TEST_LIBS))
 
 	LDFLAGS_TEST += \
-		$$(pkg-config --libs $(PKG_CFG_TEST_LIBS))
+		$(shell pkg-config --libs $(PKG_CFG_TEST_LIBS))
 endif
 
 # The following flags only work with GNU's ld
