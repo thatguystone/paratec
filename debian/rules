@@ -7,6 +7,3 @@ JOBS = $(shell perl -e 'use Debian::Debhelper::Dh_Lib; print get_buildoption("pa
 
 override_dh_auto_test:
 	$(MAKE) test-all -j$(JOBS)
-
-override_dh_strip:
-	dh_strip --dbg-package=libparatec-dbg

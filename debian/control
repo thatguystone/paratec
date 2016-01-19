@@ -33,18 +33,3 @@ Description: Parallel Testing for C/C++ - development files
 	other and in parallel, so everything is always fast and safe.
 	.
 	This package provides development files.
-
-Package: libparatec-dbg
-Section: debug
-Priority: extra
-Architecture: any
-Multi-Arch: same
-Depends:
-	libparatec1 (=${binary:Version}),
-	${misc:Depends},
-Description: Parallel Testing for C/C++ - debug files
-	Paratec is a simple unit testing framework that stays out of your way
-	while making your life easier. Tests are always run in isolation from each
-	other and in parallel, so everything is always fast and safe.
-	.
-	This package provides debugging symbols.
