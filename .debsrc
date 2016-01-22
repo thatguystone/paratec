@@ -1,0 +1,3 @@
+[debs]
+envs = debian-testing-amd64, ubuntu-lts-amd64
+remotes = default, ihr
