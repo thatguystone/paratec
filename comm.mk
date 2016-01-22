@@ -237,14 +237,15 @@ LDFLAGS_BASE += \
 	-rdynamic \
 	-pthread
 
-# For linking binaries
-LDFLAGS += \
+# For linking binaries (no called LDFLAGS because that's used everywhere, and
+# -pie messes things up (eg. for SOs))
+LDFLAGS_BIN += \
 	$(LDFLAGS_BASE) \
 	-pie
 
 # For linking tests
 LDFLAGS_TEST += \
-	$(LDFLAGS) \
+	$(LDFLAGS_BIN) \
 	--coverage
 
 # For linking shared objects
